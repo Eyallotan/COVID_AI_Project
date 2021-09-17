@@ -2,7 +2,7 @@ import pandas as pd
 from datetime import datetime
 '''
 right now every first row (first day) on each city has wrong value because of the shifts.
-this bug is irellevant if we dont need the first few days - so i think its ok
+this bug is irrelevant if we dont need the first few days - so i think its ok
 if we want to calculate the first few days good, need to work on each city seperately or fix each first row with special
 treatment.
 for each row(for city_code in cities_df['City_Code'].unique())    

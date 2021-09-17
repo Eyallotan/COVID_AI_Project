@@ -34,9 +34,8 @@ if __name__ == "__main__":
             cities_df[f'verified_cases_{i-1}_days_ago'] = cities_df['Cumulative_verified_cases'] - cities_df[f'tmp_{i}']
         else:
             cities_df[f'verified_cases_{i-1}_days_ago'] = cities_df[f'tmp_{i-1}'] - cities_df[f'tmp_{i}']
+            cities_df.drop([f'tmp_{i-1}'], axis=1, inplace=True)
 
-    for i in range(1, N):
-        cities_df.drop([f'tmp_{i}'], axis=1, inplace=True)
     cities_df.rename(columns={'verified_cases_0_days_ago': 'today_verified_cases'}, inplace=True)
 
     result_columns = ['City_Name', 'City_Code', 'Date', 'Cumulative_verified_cases', 'today_verified_cases']

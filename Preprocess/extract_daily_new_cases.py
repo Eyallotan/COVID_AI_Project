@@ -22,6 +22,7 @@ if __name__ == "__main__":
 
     cities_df['Date'] = pd.to_datetime(cities_df['Date'])
 
+    # Convert all int columns to int type (need to remove this <15 value from them)
     for column_name in int_columns:
         cities_df[column_name] = cities_df[column_name].replace('<15', 0)
         cities_df[column_name] = pd.to_numeric(cities_df[column_name])
@@ -51,14 +52,11 @@ if __name__ == "__main__":
     # tmp code to test new columns
     start_date = datetime(2020, 7, 20)
     end_date = datetime(2020, 11, 20)
-    interesting_columns = ['Cumulative_verified_cases', 'today_verified_cases', 'verified_cases_2_days_ago',
-                         'verified_cases_3_days_ago', 'verified_cases_4_days_ago', 'verified_cases_5_days_ago',
-                         'verified_cases_6_days_ago', 'verified_cases_7_days_ago']
 
     # we work in specified date range
     result_df = cities_df[(cities_df['Date'] > start_date) & (cities_df['Date'] < end_date)]
 
-    tlv_df = result_df[result_df['City_Code'] == 5000][interesting_columns]
+    tlv_df = result_df[result_df['City_Code'] == 5000][result_columns]
 
     march_20 = datetime(2020, 3, 28)
     haifa_df = cities_df[(cities_df['Date'] < march_20) & (cities_df['City_Code'] == 4000)]

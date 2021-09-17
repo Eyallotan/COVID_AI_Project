@@ -15,6 +15,7 @@ def before_date():
 
 
 if __name__ == "__main__":
+    # output_csv = pd.read_csv('output.csv')
     cities_df = pd.read_csv('../Resources/corona_city_table_ver_00134.csv')
     int_columns = ['Cumulative_verified_cases', 'Cumulated_recovered', 'Cumulated_deaths', 'Cumulated_number_of_tests',
                    'Cumulated_number_of_diagnostic_tests']
@@ -26,17 +27,26 @@ if __name__ == "__main__":
         cities_df[column_name] = pd.to_numeric(cities_df[column_name])
 
     # Generate N columns of previous days new cases
-    N = 8
+    N = 16
     for i in range(1, N):
         cities_df[f'tmp_{i}'] = cities_df['Cumulative_verified_cases'].shift(periods=i)
         if i == 1:
-            cities_df[f'verified_cases_{i}_days_ago'] = cities_df['Cumulative_verified_cases'] - cities_df[f'tmp_{i}']
+            cities_df[f'verified_cases_{i-1}_days_ago'] = cities_df['Cumulative_verified_cases'] - cities_df[f'tmp_{i}']
         else:
-            cities_df[f'verified_cases_{i}_days_ago'] = cities_df[f'tmp_{i-1}'] - cities_df[f'tmp_{i}']
+            cities_df[f'verified_cases_{i-1}_days_ago'] = cities_df[f'tmp_{i-1}'] - cities_df[f'tmp_{i}']
 
     for i in range(1, N):
         cities_df.drop([f'tmp_{i}'], axis=1, inplace=True)
-    cities_df.rename(columns={'verified_cases_1_days_ago': 'today_verified_cases'}, inplace=True)
+    cities_df.rename(columns={'verified_cases_0_days_ago': 'today_verified_cases'}, inplace=True)
+
+    result_columns = ['City_Name', 'City_Code', 'Date', 'Cumulative_verified_cases', 'today_verified_cases']
+    for i in range(2, N):
+        result_columns.append(f'verified_cases_{i - 1}_days_ago')
+
+    # Need min_date because of the bug told upper
+    min_date = datetime(2020, 5, 1)
+    result_df = cities_df[cities_df['Date'] > min_date][result_columns]
+    result_df.to_csv('output.csv', index=False)
 
     # tmp code to test new columns
     start_date = datetime(2020, 7, 20)

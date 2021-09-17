@@ -17,6 +17,23 @@ if __name__ == "__main__":
         cities_df[column_name] = cities_df[column_name].replace('<15', 0)
         cities_df[column_name] = pd.to_numeric(cities_df[column_name])
 
-    print(cities_df.dtypes)
-    print('~~~~')
+    # Generate N columns of previous days new cases
+    # for city_code in cities_df['City_Code'].unique():
+    #TODO: need to do this to every city seperately because of the shifts
+    N = 8
+    for i in range(1, N):
+        cities_df[f'tmp_{i}'] = cities_df['Cumulative_verified_cases'].shift(periods=i)
+        if i == 1:
+            cities_df[f'verified_cases_{i}_days_ago'] = cities_df['Cumulative_verified_cases'] - cities_df[f'tmp_{i}']
+        else:
+            cities_df[f'verified_cases_{i}_days_ago'] = cities_df[f'tmp_{i-1}'] - cities_df[f'tmp_{i}']
 
+    # tmp code to test new columns
+    march20 = datetime(2020, 3, 28)
+    tmp_df = cities_df[(cities_df['Date'] < march20) & (cities_df['City_Code'] == 4000)]
+
+    tmp_df = tmp_df[['Cumulative_verified_cases', 'verified_cases_1_days_ago', 'verified_cases_2_days_ago',
+                     'verified_cases_3_days_ago', 'verified_cases_4_days_ago', 'verified_cases_5_days_ago',
+                     'verified_cases_6_days_ago', 'verified_cases_7_days_ago']]
+
+    print('~~~~')

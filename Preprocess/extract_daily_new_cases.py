@@ -47,6 +47,7 @@ if __name__ == "__main__":
     min_date = datetime(2020, 5, 1)
     result_df = cities_df[cities_df['Date'] > min_date][result_columns]
     result_df.to_csv('output.csv', index=False)
+    # ~~~~~~ Finished ~~~~~~
 
     # tmp code to test new columns
     start_date = datetime(2020, 7, 20)

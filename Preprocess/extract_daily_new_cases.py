@@ -1,5 +1,5 @@
 import pandas as pd
-from datetime import datetime
+from Preprocess.utils import DataParams
 '''
 right now every first row (first day) on each city has wrong value because of the shifts.
 this bug is irrelevant if we dont need the first few days - so i think its ok
@@ -9,16 +9,19 @@ for each row(for city_code in cities_df['City_Code'].unique())
 '''
 
 
+'''
 def before_date():
     march20 = datetime(2020, 3, 28)
     march20_df = cities_df[cities_df['Date'] < march20]
 
+'''
 
-if __name__ == "__main__":
-    # output_csv = pd.read_csv('output.csv')
+
+def generate_daily_new_cases_df():
     cities_df = pd.read_csv('../Resources/corona_city_table_ver_00134.csv')
     int_columns = ['Cumulative_verified_cases', 'Cumulated_recovered', 'Cumulated_deaths', 'Cumulated_number_of_tests',
                    'Cumulated_number_of_diagnostic_tests']
+    params = DataParams()
 
     cities_df['Date'] = pd.to_datetime(cities_df['Date'])
 
@@ -28,8 +31,8 @@ if __name__ == "__main__":
         cities_df[column_name] = pd.to_numeric(cities_df[column_name])
 
     # Generate N columns of previous days new cases
-    N = 16
-    for i in range(1, N):
+    N = params.number_of_days_for_infected_stats
+    for i in range(1, N + 2):
         cities_df[f'tmp_{i}'] = cities_df['Cumulative_verified_cases'].shift(periods=i)
         if i == 1:
             cities_df[f'verified_cases_{i-1}_days_ago'] = cities_df['Cumulative_verified_cases'] - cities_df[f'tmp_{i}']
@@ -39,17 +42,21 @@ if __name__ == "__main__":
 
     cities_df.rename(columns={'verified_cases_0_days_ago': 'today_verified_cases'}, inplace=True)
 
-    result_columns = ['City_Name', 'City_Code', 'Date', 'Cumulative_verified_cases', 'today_verified_cases']
-    for i in range(2, N):
+    result_columns = ['City_Name', 'City_Code', 'Date', 'today_verified_cases']
+    for i in range(2, N + 2):
         result_columns.append(f'verified_cases_{i - 1}_days_ago')
 
-    # Need min_date because of the bug told upper
-    min_date = datetime(2020, 5, 1)
-    result_df = cities_df[cities_df['Date'] > min_date][result_columns]
-    result_df.to_csv('output.csv', index=False)
+    # set start and end date (see the constraints for start date in the file prolog)
+    start_date = params.start_date
+    end_date = params.end_date
+    result_df = cities_df[(cities_df['Date'] >= start_date) & (cities_df['Date'] <= end_date)][result_columns]
+    return result_df
+
+
+'''
     # ~~~~~~ Finished ~~~~~~
 
-    # tmp code to test new columns
+ # tmp code to test new columns
     start_date = datetime(2020, 7, 20)
     end_date = datetime(2020, 11, 20)
 
@@ -62,3 +69,5 @@ if __name__ == "__main__":
     haifa_df = cities_df[(cities_df['Date'] < march_20) & (cities_df['City_Code'] == 4000)]
 
     print('~~~~')
+'''
+

@@ -1,5 +1,4 @@
 import pandas as pd
-from Preprocess import utils
 from Preprocess.utils import DataParams
 
 
@@ -24,7 +23,8 @@ A better approach is to group by cities (a code demonstrating this approach was 
 for now, in case we want to use it later). 
 '''
 
-if __name__ == "__main__":
+
+def generate_vaccination_columns():
     # read csv file
     vaccinated_df = pd.read_csv('../Resources/vaccinated_city_table_ver_00156.csv')
     vaccinated_df['Date'] = pd.to_datetime(vaccinated_df['Date'])
@@ -70,8 +70,11 @@ if __name__ == "__main__":
     '''
 
     # choose date ranges (see file prolog for more details)
-    result_df = vaccinated_df[(vaccinated_df['Date'] >= params.start_date) &
-                              (vaccinated_df['Date'] <= params.end_date)]
+    vaccinated_df = vaccinated_df[(vaccinated_df['Date'] >= params.start_date) &
+                                  (vaccinated_df['Date'] <= params.end_date)]
 
-    # generate output csv
-    utils.generate_output(result_df, 'vaccination_stats_output')
+    # rename first two columns. Since they are used as keys later on when we merge the data frames
+    # together, they need to have identical names.
+    col_names = {"CityName": "City_Name", "CityCode": "City_Code"}
+    result_df = vaccinated_df.rename(columns=col_names)
+    return result_df

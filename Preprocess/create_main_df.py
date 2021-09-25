@@ -40,4 +40,4 @@ if __name__ == "__main__":
                                                                        "Date"])
 
     # generate the output df
-    utils.generate_output(result_df, 'corona_df')
+    utils.generate_output_csv(result_df, 'corona_df')

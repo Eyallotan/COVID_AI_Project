@@ -14,6 +14,14 @@ class DataParams:
         self.number_of_days_for_infected_stats = 14
 
 
-def generate_output(df, output_name):
+def generate_output_csv(df, output_name):
+    """
+   Parameters
+   ----------
+   df : dataframe object
+       the dataframe we want to convert to csv
+   output_name : str
+       csv file name (no need to add .csv suffix)
+    """
     df.to_csv(f'{output_name}.csv', index=False, encoding='utf-8-sig')
 

@@ -1,7 +1,6 @@
 import pandas as pd
 from Preprocess.utils import DataParams
 
-
 '''
 This code extracts vaccination stats from for each city. The stats are calculated in the following
 way:
@@ -31,10 +30,9 @@ def generate_vaccination_columns():
     params = DataParams()
 
     # get rid of fields containing a "<15" value and replace them with 0
-    for column in vaccinated_df:
+    for column in vaccinated_df.filter(regex="dose_.*"):
         vaccinated_df[column].replace({"<15": 0}, inplace=True)
-        if vaccinated_df.columns.get_loc(column) > 2:
-            vaccinated_df[column] = pd.to_numeric(vaccinated_df[column])
+        vaccinated_df[column] = pd.to_numeric(vaccinated_df[column])
 
     # the df contains vaccination stats by age. We want the total number of vaccinated so we sum
     # all ages for each vaccine. I also create a diff col to help with calculations later on.

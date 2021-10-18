@@ -2,6 +2,7 @@ import pandas as pd
 from Preprocess import utils
 from Preprocess import extract_daily_new_cases
 from Preprocess import extract_vaccination_stats
+from Preprocess import normalize_df
 
 '''
 This code generates the main corona data frame. We use external code that generates all columns 
@@ -38,6 +39,8 @@ if __name__ == "__main__":
                                                                    "Date"])
     result_df = pd.merge(temp_df, daily_new_cases_df, how="inner", on=["City_Name", "City_Code",
                                                                        "Date"])
+
+    result_df = normalize_df.normalize_data_set(result_df)
 
     # generate the output df
     utils.generate_output_csv(result_df, 'corona_df')

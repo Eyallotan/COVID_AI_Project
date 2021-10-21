@@ -14,6 +14,7 @@ class DataParams:
         self.number_of_days_for_infected_stats = 14
         self.normalization_factor = 10000
         self.not_normalized_columns = ['City_Name', 'City_Code', 'Date', 'colour', 'final_score']
+        self.Y = 'today_verified_cases'
 
 
 def generate_output_csv(df, output_name):

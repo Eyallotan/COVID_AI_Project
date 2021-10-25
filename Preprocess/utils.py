@@ -12,8 +12,8 @@ class DataParams:
         self.end_date = datetime(2021, 11, 9)
         self.number_of_weeks_for_vaccination_stats = 4
         self.number_of_days_for_infected_stats = 14
-        self.normalization_factor = 10000
-        self.not_normalized_columns = ['City_Name', 'City_Code', 'Date', 'colour', 'final_score']
+        self.normalization_factor = 1
+        self.not_normalized_columns = ['City_Name', 'City_Code', 'Date', 'colour', 'final_score', 'today_verified_cases']
         self.Y = 'today_verified_cases'
 
 

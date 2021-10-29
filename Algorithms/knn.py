@@ -52,6 +52,16 @@ def init_model(data):
 
     return neigh, X_test, y_test
 
+
+def check_score_function(model, X_test, y_test):
+    row159 = [X_test.iloc[159]]
+    y159 = y_test.iloc[159]
+    ypred159 = model.predict(row159)
+    print(f'y: {y159}, y_hat: {ypred159}')
+    acc = model.score(row159, [133])
+    print(f'159 accuracy: {acc}')  # Conclustion: score gives 1 only if same result
+
+
 def evaluate_model(model, X_test, y_test):
     acc = model.score(X_test, y_test)
     print(f'knn accuracy: {acc}')

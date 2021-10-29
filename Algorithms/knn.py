@@ -1,5 +1,6 @@
 from datetime import datetime
 import pandas as pd
+import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
 
@@ -48,7 +49,7 @@ def init_model(data):
     data.drop(['today_verified_cases'], axis=1, inplace=True)
     X = data
     X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.4, random_state=0)
-    neigh.fit(X_train, y_train)
+    neigh.fit(X_train.values, y_train.values)
 
     return neigh, X_test, y_test
 
@@ -63,8 +64,30 @@ def check_score_function(model, X_test, y_test):
 
 
 def evaluate_model(model, X_test, y_test):
-    acc = model.score(X_test, y_test)
+    acc = model.score(X_test.values, y_test.values)
     print(f'knn accuracy: {acc}')
+
+    print('my eval:')
+    exact = 0
+    for index, row in X_test.iterrows():
+        ypred = model.predict([row.values])
+        if ypred == y_test[index]:
+            exact+=1
+
+    print(f'my acc: {exact/len(X_test)}. exact: {exact}, len_test: {len(X_test)}')
+
+    print('second eval:')
+    diffs = []
+    for index, row in X_test.iterrows():
+        ypred = model.predict([row.values])
+        # if ypred - y_test[index] == 0:
+        #     continue
+        if y_test[index] == 0:
+            diffs.append(abs(ypred))
+        else:
+            diffs.append(abs(ypred - y_test[index]) / y_test[index])
+
+    print(f'second eval: {1 - np.mean(diffs)}')
 
 
 if __name__ == "__main__":

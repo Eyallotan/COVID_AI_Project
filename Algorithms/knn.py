@@ -67,27 +67,31 @@ def evaluate_model(model, X_test, y_test):
     acc = model.score(X_test.values, y_test.values)
     print(f'knn accuracy: {acc}')
 
-    print('my eval:')
+    print('exact eval:')
     exact = 0
     for index, row in X_test.iterrows():
         ypred = model.predict([row.values])
         if ypred == y_test[index]:
             exact+=1
 
-    print(f'my acc: {exact/len(X_test)}. exact: {exact}, len_test: {len(X_test)}')
+    print(f'exact acc: {exact/len(X_test)}. exact: {exact}, len_test: {len(X_test)}')
 
-    print('second eval:')
+    print('second accuracy:')
     diffs = []
     for index, row in X_test.iterrows():
         ypred = model.predict([row.values])
         # if ypred - y_test[index] == 0:
         #     continue
         if y_test[index] == 0:
-            diffs.append(abs(ypred))
+            if ypred == 0:
+                diffs.append(0)
+            else:
+                diffs.append(1)  # 1 for max error. abs(ypred) is not good
         else:
-            diffs.append(abs(ypred - y_test[index]) / y_test[index])
+            acc = abs(ypred - y_test[index]) / y_test[index]
+            diffs.append(acc[0])
 
-    print(f'second eval: {1 - np.mean(diffs)}')
+    print(f'second accuracy: {1 - np.mean(diffs)}')
 
 
 if __name__ == "__main__":

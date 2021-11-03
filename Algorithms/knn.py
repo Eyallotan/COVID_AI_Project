@@ -1,7 +1,10 @@
 from datetime import datetime
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold
 
 from Preprocess.utils import DataParams
 
@@ -42,25 +45,93 @@ def preprocess(data):
     data = data[base_columns + daily_new_cases_columns + vaccination_columns]
     return data
 
+
 def init_model(data):
     neigh = KNeighborsClassifier(n_neighbors=3)
     Y = data['today_verified_cases']
     data.drop(['today_verified_cases'], axis=1, inplace=True)
     X = data
     X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.4, random_state=0)
-    neigh.fit(X_train, y_train)
+    neigh.fit(X_train.values, y_train.values)
 
     return neigh, X_test, y_test
 
+
+def check_score_function(model, X_test, y_test):
+    row159 = [X_test.iloc[159]]
+    y159 = y_test.iloc[159]
+    ypred159 = model.predict(row159)
+    print(f'y: {y159}, y_hat: {ypred159}')
+    acc = model.score(row159, [133])
+    print(f'159 accuracy: {acc}')  # Conclustion: score gives 1 only if same result
+
+
 def evaluate_model(model, X_test, y_test):
-    acc = model.score(X_test, y_test)
+    acc = model.score(X_test.values, y_test.values)
     print(f'knn accuracy: {acc}')
 
+    print('exact eval:')
+    exact = 0
+    for index, row in X_test.iterrows():
+        ypred = model.predict([row.values])
+        if ypred == y_test[index]:
+            exact+=1
+
+    print(f'exact acc: {exact/len(X_test)}. exact: {exact}, len_test: {len(X_test)}')
+
+    print('second accuracy:')
+    diffs = []
+    for index, row in X_test.iterrows():
+        ypred = model.predict([row.values])
+        # if ypred - y_test[index] == 0:
+        #     continue
+        if y_test[index] == 0:
+            if ypred == 0:
+                diffs.append(0)
+            else:
+                diffs.append(1)  # 1 for max error. abs(ypred) is not good
+        else:
+            acc = abs(ypred - y_test[index]) / y_test[index]
+            diffs.append(acc[0])
+
+    print(f'second accuracy: {1 - np.mean(diffs)}')
+
+
+def experiment(examples):
+    kf = KFold(n_splits=5, shuffle=True, random_state=307916502)
+    K = range(3, 50)
+    accuracies = []
+    for k in K:
+        print(f'k:{k}')
+        sum = 0
+        for train_index, test_index in kf.split(examples):
+            neigh = KNeighborsClassifier(n_neighbors=k)
+            train_examples, test_examples = examples.iloc[train_index], examples.iloc[test_index]
+
+            y_train = train_examples['today_verified_cases'].values
+            x_train = train_examples.loc[:, train_examples.columns != 'today_verified_cases']
+            neigh.fit(x_train.values, y_train)
+
+            y_test = test_examples['today_verified_cases'].values
+            x_test = test_examples.loc[:, test_examples.columns != 'today_verified_cases']
+            acc = neigh.score(x_test.values, y_test)
+            # print(f'k={k}, knn accuracy: {acc}')
+
+            sum += acc
+        avg_accuracy = sum / kf.n_splits
+        accuracies.append(avg_accuracy)
+        print(f'K:{k}, average accuracy: {avg_accuracy}')
+
+    plt.plot(K, accuracies)
+    plt.xlabel('K')
+    plt.ylabel('accuracy')
+    plt.show()
 
 if __name__ == "__main__":
     # play_knn()
-    data = pd.read_csv('../Preprocess/corona_df.csv')
+    data = pd.read_csv('train_df.csv')
     data = preprocess(data)
 
-    model, X_test, y_test = init_model(data)
-    evaluate_model(model, X_test, y_test)
+    experiment(data)
+    # model, X_test, y_test = init_model(data)
+    # evaluate_model(model, X_test, y_test)

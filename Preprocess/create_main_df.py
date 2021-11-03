@@ -1,4 +1,6 @@
 import pandas as pd
+from sklearn.model_selection import train_test_split
+
 from Preprocess import utils
 from Preprocess import extract_daily_new_cases
 from Preprocess import extract_vaccination_stats
@@ -45,5 +47,6 @@ if __name__ == "__main__":
     # generate the output df
     utils.generate_output_csv(result_df, 'corona_df')
 
-
-
+    train_df, test_df = train_test_split(result_df, test_size=0.4, random_state=0)
+    utils.generate_output_csv(train_df, 'train_df')
+    utils.generate_output_csv(test_df, 'test_df')

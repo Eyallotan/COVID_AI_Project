@@ -44,3 +44,6 @@ if __name__ == "__main__":
 
     # generate the output df
     utils.generate_output_csv(result_df, 'corona_df')
+
+
+

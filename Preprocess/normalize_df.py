@@ -22,7 +22,7 @@ def normalize_data_set(result_df):
     # normalizing df by calculating percentage per normalization_factor
     for column in result_normalized_df:
         if column not in params.not_normalized_columns:
-            result_normalized_df[column] = (result_normalized_df[column] / result_normalized_df['population']) * (params.normalization_factor)
+            result_normalized_df[column] = (result_normalized_df[column] * (params.normalization_factor)) / result_normalized_df['population']
 
     # remove population column from columns we don't want to normalize
     params.not_normalized_columns.remove('population')

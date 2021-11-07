@@ -15,6 +15,8 @@ class DataParams:
         self.normalization_factor = 1
         self.not_normalized_columns = ['City_Name', 'City_Code', 'Date', 'colour', 'final_score', 'today_verified_cases']
         self.Y = 'today_verified_cases'
+        self.split_test_size = 0.2
+        self.split_random_state = 1
 
 
 def generate_output_csv(df, output_name):

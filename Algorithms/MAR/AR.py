@@ -1,15 +1,21 @@
+# External includes
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
+from datetime import datetime
+from time import time
+# Statsmodels
 from statsmodels.tsa.stattools import adfuller
-from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
-from sklearn.preprocessing import StandardScaler
 
+# Internal includes
+from DataTransformation import DataTransformation
+from AlgoRunner import AlgoRunner
 from Preprocess import utils
 from Preprocess.utils import DataParams
 
+import warnings
+warnings.filterwarnings("ignore")
 pd.options.mode.chained_assignment = None  # default='warn'
-import numpy as np
-from statsmodels.tsa.ar_model import AutoReg
 
 
 def generate_daily_new_cases_csv(city_code):
@@ -50,141 +56,43 @@ def generate_daily_new_cases_csv(city_code):
 
 class StationarityTests:
     def __init__(self, significance=.05):
-        self.SignificanceLevel = significance
-        self.pValue = None
-        self.isStationary = None
+        self.significance_level = significance
+        self.p_value = None
+        self.is_stationary = None
 
     def ADF_Stationarity_Test(self, time_series, printResults=True):
         # Dickey-Fuller test:
-        adfTest = adfuller(time_series, autolag='AIC')
+        adf_test = adfuller(time_series, autolag='AIC')
 
-        self.pValue = adfTest[1]
+        self.p_value = adf_test[1]
 
-        if self.pValue < self.SignificanceLevel:
-            self.isStationary = True
+        if self.p_value < self.significance_level:
+            self.is_stationary = True
         else:
-            self.isStationary = False
+            self.is_stationary = False
 
         if printResults:
-            dfResults = pd.Series(adfTest[0:4],
+            df_results = pd.Series(adf_test[0:4],
                                   index=['ADF Test Statistic', 'P-Value', '# Lags Used',
                                          '# Observations Used'])
 
             # Add Critical Values
-            for key, value in adfTest[4].items():
-                dfResults['Critical Value (%s)' % key] = value
+            for key, value in adf_test[4].items():
+                df_results['Critical Value (%s)' % key] = value
 
             print('Augmented Dickey-Fuller Test Results:')
-            print(dfResults)
-
-
-class DataTransformation:
-    """
-    Class for performing transformations on time series data sets.
-    For each transformation operator there is a inverse operator that can transform the data
-    back to it's original form.
-    """
-    def __init__(self, data, value_name):
-        self.TimeSeries = data
-        self.value_name = value_name
-        self.scaler = StandardScaler()
-
-    def difference(self, interval=1):
-        """
-        Transform to a difference time series with a certain interval.
-        :param interval: The difference operator.
-        :return: Time series with applied diff.
-        """
-        assert interval > 0
-        return self.TimeSeries.diff(interval).dropna()
-
-    def sqrt(self):
-        """
-        Transform by taking a square root of all values.
-        :return: Time series with applied square root transformation.
-        """
-        sqrt_time_series = self.TimeSeries.copy()
-        sqrt_time_series[self.value_name] = np.sqrt(sqrt_time_series[self.value_name])
-        return sqrt_time_series
-
-    def pow(self):
-        """
-        Transform by applying power of 2 to all values.
-        :return: Time series with applied pow transformation.
-        """
-        pow_time_series = self.TimeSeries.copy()
-        pow_time_series[self.value_name] = np.power((pow_time_series[self.value_name]), 2)
-        return pow_time_series
-
-    def log(self, increment_val=0):
-        """
-        Transform by applying log (base 2) to all values.
-        :param increment_val: Log function can only be applied to numbers higher than zero,
-        so if the time series has values <= 0 you should provide the increment val that will be
-        added to all values in order for the log function to work properly. Note that the same
-        increment_val should be provided when inverting the time series back.
-        :return: Time series with applied log transformation.
-        """
-        log_time_series = self.TimeSeries.copy()
-        log_time_series += increment_val
-        log_time_series[self.value_name] = np.log2((log_time_series[self.value_name]))
-        return log_time_series
-
-    def exp(self, decrement_val=0):
-        """
-        Transform by applying exponent(raise to the power of the natural exponent e) to all values.
-        :param decrement_val: If this function is used to revert the log operator, a decrement
-        value will be subtracted after applying the exponent function (used to restore original
-        values that might have been <= 0).
-        :return: Time series with applied exp transformation.
-        """
-        exp_time_series = self.TimeSeries.copy()
-        exp_time_series[self.value_name] = np.exp((exp_time_series[self.value_name]))
-        exp_time_series -= decrement_val
-        return exp_time_series
-
-    def standardization(self):
-        """
-        Transform by applying standardization to the data. For each value x in our time series we
-        produce a transformation value y that is given by:
-        y = (x - mean) / standard_deviation
-        :return: Time series with applied standardization.
-        """
-        standardized_time_series = self.TimeSeries.copy()
-        values = standardized_time_series.values
-        values = values.reshape((len(values), 1))
-        # train the standardization
-        self.scaler = self.scaler.fit(values)
-        # print('Mean: %f, StandardDeviation: %f' % (self.scaler.mean_, math.sqrt(
-        # self.scaler.var_)))
-
-        normalized = self.scaler.transform(values)
-        standardized_time_series.iloc[:, 0] = normalized
-        return standardized_time_series
-
-    def invert_standardization(self, standardized_time_series):
-        """
-        Apply the inverse transformation on a standardized time series.
-        :param standardized_time_series
-        :return: Original time series.
-        """
-        inverse_time_series = standardized_time_series.copy()
-        values = inverse_time_series.values
-        values = values.reshape((len(values), 1))
-        inversed = self.scaler.inverse_transform(values)
-        inverse_time_series.iloc[:, 0] = inversed
-        return inverse_time_series
+            print(df_results)
 
 
 def test_transformations(time_series, val_name):
     transformer = DataTransformation(time_series.copy(), val_name)
-    sTest = StationarityTests()
+    s_test = StationarityTests()
 
     # Difference transformation
     time_series_diff = transformer.difference()
     plot_time_series(time_series_diff, 'Differenced time series', 'Diff values')
-    sTest.ADF_Stationarity_Test(time_series_diff, printResults=True)
-    print("Is the time series stationary? {0}".format(sTest.isStationary))
+    s_test.ADF_Stationarity_Test(time_series_diff, printResults=True)
+    print("Is the time series stationary? {0}".format(s_test.is_stationary))
     # TODO: Find the best diff operator
 
     # Square root transformation
@@ -194,37 +102,37 @@ def test_transformations(time_series, val_name):
     sqrt_time_series = transformer.sqrt()
     print('Sqrt time series:\n', sqrt_time_series.head())
     plot_time_series(sqrt_time_series, 'Square root transformation', 'Square root values')
-    sTest.ADF_Stationarity_Test(sqrt_time_series, printResults=True)
-    print("Is the time series stationary? {0}".format(sTest.isStationary))
+    s_test.ADF_Stationarity_Test(sqrt_time_series, printResults=True)
+    print("Is the time series stationary? {0}".format(s_test.is_stationary))
 
     # take diff on top of sqrt transformation
     sqrt_transform = DataTransformation(sqrt_time_series, val_name)
     sqrt_diff_time_series = sqrt_transform.difference(1)
     plot_time_series(sqrt_diff_time_series, 'Square root and Diff(1) transformation',
                      'Transformation values')
-    sTest.ADF_Stationarity_Test(sqrt_diff_time_series, printResults=True)
-    print("Is the time series stationary? {0}".format(sTest.isStationary))
+    s_test.ADF_Stationarity_Test(sqrt_diff_time_series, printResults=True)
+    print("Is the time series stationary? {0}".format(s_test.is_stationary))
 
     # Power transformation
     pow_transformation = transformer.pow()
     print('Power time series:\n', pow_transformation.head())
     plot_time_series(pow_transformation, 'Power of 2 transformation', 'Power values')
-    sTest.ADF_Stationarity_Test(pow_transformation, printResults=True)
-    print("Is the time series stationary? {0}".format(sTest.isStationary))
+    s_test.ADF_Stationarity_Test(pow_transformation, printResults=True)
+    print("Is the time series stationary? {0}".format(s_test.is_stationary))
 
     # Log transformation
     log_transformation = transformer.log(1)
     print('Log2 time series:\n', log_transformation.head())
     plot_time_series(log_transformation, 'Log transformation', 'Log values')
-    sTest.ADF_Stationarity_Test(log_transformation, printResults=True)
-    print("Is the time series stationary? {0}".format(sTest.isStationary))
+    s_test.ADF_Stationarity_Test(log_transformation, printResults=True)
+    print("Is the time series stationary? {0}".format(s_test.is_stationary))
     # take diff on top of log transformation
     log_transformation = DataTransformation(log_transformation, val_name)
     log_diff_time_series = log_transformation.difference(1)
     plot_time_series(log_diff_time_series, 'Log and Diff(1) transformation', 'Transformation '
                                                                              'values')
-    sTest.ADF_Stationarity_Test(log_diff_time_series, printResults=True)
-    print("Is the time series stationary? {0}".format(sTest.isStationary))
+    s_test.ADF_Stationarity_Test(log_diff_time_series, printResults=True)
+    print("Is the time series stationary? {0}".format(s_test.is_stationary))
 
     # Standardization transformation
     standardized_time_series = transformer.standardization()
@@ -232,15 +140,15 @@ def test_transformations(time_series, val_name):
     plot_time_series(standardized_time_series, 'Standardization transformation',
                      'Standardized values')
 
-    sTest.ADF_Stationarity_Test(standardized_time_series, printResults=True)
-    print("Is the time series stationary? {0}".format(sTest.isStationary))
+    s_test.ADF_Stationarity_Test(standardized_time_series, printResults=True)
+    print("Is the time series stationary? {0}".format(s_test.is_stationary))
     # take log on top of standardization transformation
     standardized_time_series = DataTransformation(standardized_time_series, val_name)
     standardized_log_time_series = standardized_time_series.log(1)
     plot_time_series(standardized_log_time_series, 'Standardization and Log transformation',
                      'Transformation values')
-    sTest.ADF_Stationarity_Test(standardized_log_time_series, printResults=True)
-    print("Is the time series stationary? {0}".format(sTest.isStationary))
+    s_test.ADF_Stationarity_Test(standardized_log_time_series, printResults=True)
+    print("Is the time series stationary? {0}".format(s_test.is_stationary))
 
     # take diff on top of standardization and log transformation
     standardized_log_time_series = DataTransformation(standardized_log_time_series, val_name)
@@ -248,8 +156,8 @@ def test_transformations(time_series, val_name):
     plot_time_series(standardized_log_diff_time_series, 'Standardization, Log and Diff(1) '
                                                         'transformation', 'Transformation values')
 
-    sTest.ADF_Stationarity_Test(standardized_log_diff_time_series, printResults=True)
-    print("Is the time series stationary? {0}".format(sTest.isStationary))
+    s_test.ADF_Stationarity_Test(standardized_log_diff_time_series, printResults=True)
+    print("Is the time series stationary? {0}".format(s_test.is_stationary))
 
     # generate standardized time series and then apply inverse transformation to get back the
     # original time series
@@ -299,70 +207,17 @@ def generate_time_series(city_code):
     return time_series
 
 
-def plot_correlation_plots(time_series, lags=20):
-    """
-    This function plots the ACF and PACF plots for a given time series.
-    :param time_series: The time series to examine.
-    :param lags: The number of lags to be printed for the correlation functions.
-    """
-    plot_acf(time_series, lags)
-    plt.show()
-    plot_pacf(time_series, lags)
-    plt.show()
-
-def generate_train_and_test_set(time_series, date_threshold, test_set_length):
-    """
-    This function splits the time series into a train and test set based on a date threshold.
-    :param time_series: The time series to split.
-    :param date_threshold: The date that marks the end of the train set. The train set will
-    contain all values from the first value in the time series up until the date threshold value.
-    :param test_set_length: The length of the test set, i.e., the number of values we want to
-    predict. The resulting test set will be a time series starting from one day after the
-    date_threshold and going on for test_set_length days.
-    :return: A tuple containing (train_set, test_set)
-    """
-
-
-def run_ar_simulation(time_series, ar_order=1):
-    """
-    Train an auto regressive (AR) model and use it to predict future values.
-    :param time_series: The time series to run the model on.
-    :param ar_order: The order of the the AR regressor.
-    """
-
-
-def run_ma_simulation(time_series, ma_order=1):
-    """
-    Train an moving average (MA) model and use it to predict future values.
-    :param time_series: The time series to run the model on.
-    :param ma_order: The order of the the MA regressor.
-    """
-
-
-def run_arma_simulation(time_series, ar_order=1, ma_order=1):
-    """
-    Train an ARMA model and use it to predict future values.
-    :param time_series: The time series to run the model on.
-    :param ar_order: The order of the the AR part.
-    :param ma_order: The order of the the MA part.
-    """
-
-
-def run_arima_simulation(time_series, ar_order=1, ma_order=1):
-    """
-    Train an ARIMA model and use it to predict future values.
-    :param time_series: The time series to run the model on.
-    :param ar_order: The order of the the AR part.
-    :param ma_order: The order of the the MA part.
-    """
-
-
 if __name__ == "__main__":
     time_series = generate_time_series(city_code=5000)
 
     # run transformations
-    test_transformations(time_series, 'daily_new_cases')
+    # test_transformations(time_series, 'daily_new_cases')
 
+    # Get training and test sets
+    train_end = datetime(2021, 9, 5)
+    test_end = datetime(2021, 9, 11)
+    runner = AlgoRunner(time_series, train_end, test_end)
+    runner.plot_correlation_plots(20)
 
 
 

@@ -23,7 +23,8 @@ cols = ['City_Code','Cumulative_verified_cases',
         'verified_cases_9_days_ago','verified_cases_10_days_ago',
         'verified_cases_11_days_ago','verified_cases_12_days_ago','verified_cases_13_days_ago',
         'verified_cases_14_days_ago'] # 'Date','today_verified_cases','City_Name',
-
+tlv_code = 5000
+haifa_code = 4000
 def play_knn():
     data = pd.read_csv('../Preprocess/output.csv')
     data['Date'] = pd.to_datetime(data['Date'])
@@ -130,6 +131,66 @@ def experiment_k(examples):
     plt.ylabel('accuracy')
     plt.show()
 
+def run_knn_on_small_cities(population, k, train_df, test_df):
+    population_df = pd.read_csv('../Resources/population_table.csv')
+    population_df = population_df[['City_Code', 'population']].drop_duplicates()
+
+    train_df = train_df.merge(population_df, on=["City_Code"])
+    test_df = test_df.merge(population_df, on=["City_Code"])
+
+    train_df = train_df[train_df['population'] <= population]
+    test_df = test_df[test_df['population'] <= population]
+
+    acc = run_knn(k, train_df, test_df)
+    print(f'knn_on_small_cities accuracy: {acc}, population={population}')
+
+def run_knn_on_big_cities(population, k, train_df, test_df):
+    population_df = pd.read_csv('../Resources/population_table.csv')
+    population_df = population_df[['City_Code', 'population']].drop_duplicates()
+
+    train_df = train_df.merge(population_df, on=["City_Code"])
+    test_df = test_df.merge(population_df, on=["City_Code"])
+
+    train_df = train_df[train_df['population'] >= population]
+    test_df = test_df[test_df['population'] >= population]
+
+    acc = run_knn(k, train_df, test_df)
+    print(f'knn_on_big_cities accuracy: {acc}, population={population}')
+
+def run_knn_on_small_new_cases(new_cases, k, train_df, test_df):
+    population_df = pd.read_csv('../Resources/population_table.csv')
+    population_df = population_df[['City_Code', 'population']].drop_duplicates()
+
+    train_df = train_df.merge(population_df, on=["City_Code"])
+    test_df = test_df.merge(population_df, on=["City_Code"])
+
+    train_df = train_df[train_df['today_verified_cases'] <= new_cases]
+    test_df = test_df[test_df['today_verified_cases'] <= new_cases]
+
+    acc = run_knn(k, train_df, test_df)
+    print(f'knn_on_small_new_cases accuracy: {acc}, new_cases {new_cases}')
+
+
+def run_knn_on_big_new_cases(new_cases, k, train_df, test_df):
+    population_df = pd.read_csv('../Resources/population_table.csv')
+    population_df = population_df[['City_Code', 'population']].drop_duplicates()
+
+    train_df = train_df.merge(population_df, on=["City_Code"])
+    test_df = test_df.merge(population_df, on=["City_Code"])
+
+    train_df = train_df[train_df['today_verified_cases'] >= new_cases]
+    test_df = test_df[test_df['today_verified_cases'] >= new_cases]
+
+    acc = run_knn(k, train_df, test_df)
+    print(f'knn_on_big_new_cases accuracy: {acc}, new_cases {new_cases}')
+
+def experiment_subset_data(k, train_df, test_df):
+    run_knn_on_small_cities(10000, k, train_df, test_df)
+    run_knn_on_small_cities(100000, k, train_df, test_df)
+    run_knn_on_small_new_cases(30, k, train_df, test_df)
+    run_knn_on_big_new_cases(400, k, train_df, test_df)
+
+
 if __name__ == "__main__":
     # play_knn()
     train_df = pd.read_csv('../Preprocess/train_df.csv')
@@ -140,9 +201,10 @@ if __name__ == "__main__":
 
     # data = preprocess(data)
     # model, X_test, y_test = init_model(data)
-    # train_df = train_df[best_columns]
-    # test_df = test_df[best_columns]
+    train_df = train_df[best_columns]
+    test_df = test_df[best_columns]
     # acc = run_knn(5, train_df, test_df)
     # print(f'knn accuracy: {acc}')
     # experiment_k(train_df[best_columns])
-    experiment_features(train_df, cols)
+    # experiment_features(train_df, cols)
+    experiment_subset_data(5, train_df, test_df)

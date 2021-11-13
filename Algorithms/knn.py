@@ -25,6 +25,10 @@ cols = ['City_Code','Cumulative_verified_cases',
         'verified_cases_14_days_ago'] # 'Date','today_verified_cases','City_Name',
 tlv_code = 5000
 haifa_code = 4000
+min = '2021-01-20'
+max = '2021-09-11'
+
+
 def play_knn():
     data = pd.read_csv('../Preprocess/output.csv')
     data['Date'] = pd.to_datetime(data['Date'])
@@ -180,7 +184,15 @@ def run_knn_on_colour(colour, k, train_df, test_df):
     print(f'knn_on_big_new_cases accuracy: {acc}, colour {colour}')
 
 
-def experiment_subset_data(k, train_df, test_df):
+def run_knn_on_dates(k, train_df, test_df, start_date, end_date, best_columns):
+    test_df['Date'] = pd.to_datetime(test_df['Date'])
+    test_df = test_df[(test_df['Date'] >= start_date) & (test_df['Date'] <= end_date)]
+    test_df = test_df[best_columns]
+    acc = run_knn(k, train_df, test_df)
+    print(f'knn_on_big_new_cases accuracy: {acc}, start_date {start_date}, , end_date {end_date}')
+
+
+def experiment_subset_data(k, train_df, test_df, full_test_df, best_columns):
     run_knn_on_small_cities(10000, k, train_df, test_df)
     run_knn_on_small_cities(100000, k, train_df, test_df)
     run_knn_on_small_new_cases(30, k, train_df, test_df)
@@ -190,11 +202,30 @@ def experiment_subset_data(k, train_df, test_df):
     run_knn_on_colour(2, k, train_df, test_df)
     run_knn_on_colour(3, k, train_df, test_df)
 
+    start_date = datetime(2021, 1, 20)
+    end_date = datetime(2021, 3, 20)
+    run_knn_on_dates(k, train_df, full_test_df, start_date, end_date, best_columns)
+
+    start_date = datetime(2021, 3, 20)
+    end_date = datetime(2021, 5, 20)
+    run_knn_on_dates(k, train_df, full_test_df, start_date, end_date, best_columns)
+
+    start_date = datetime(2021, 5, 20)
+    end_date = datetime(2021, 7, 20)
+    run_knn_on_dates(k, train_df, full_test_df, start_date, end_date, best_columns)
+
+    start_date = datetime(2021, 7, 20)
+    end_date = datetime(2021, 9, 11)
+    run_knn_on_dates(k, train_df, full_test_df, start_date, end_date, best_columns)
+
 
 if __name__ == "__main__":
     # play_knn()
+    data = pd.read_csv('train_df.csv')
+    data.sort_values(by=['City_Code', 'Date'], inplace=True)
+
     train_df = pd.read_csv('../Preprocess/train_df.csv')
-    test_df = pd.read_csv('../Preprocess/test_df.csv')
+    full_test_df = pd.read_csv('../Preprocess/test_df.csv')
 
     best_columns = ['vaccinated_dose_3_total', 'dose_3_in_last_2_week', 'verified_cases_7_days_ago', 'City_Code',
                     'verified_cases_14_days_ago', 'today_verified_cases', 'colour']  # 'colour' is not realy part of the best columns
@@ -202,9 +233,9 @@ if __name__ == "__main__":
     # data = preprocess(data)
     # model, X_test, y_test = init_model(data)
     train_df = train_df[best_columns]
-    test_df = test_df[best_columns]
+    test_df = full_test_df[best_columns]
     # acc = run_knn(5, train_df, test_df)
     # print(f'knn accuracy: {acc}')
     # experiment_k(train_df[best_columns])
     # experiment_features(train_df, cols)
-    experiment_subset_data(5, train_df, test_df)
+    experiment_subset_data(5, train_df, test_df, full_test_df, best_columns)

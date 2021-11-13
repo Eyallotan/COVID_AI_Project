@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 
+from sklearn.metrics import mean_absolute_percentage_error, mean_absolute_error, mean_squared_error
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.arima.model import ARIMA
 from datetime import timedelta
@@ -44,7 +46,7 @@ class AlgoRunner:
         :param model_fit: Trained model object
         :param model_name: The model name
         :param print_plots: Whether to print the residuals plot and data vs. predictions plot.
-        :return: The predictions series.
+        :return: The model's predictions.
         """
         predictions = model_fit.forecast(len(self.test_data))
         predictions = pd.Series(predictions, index=self.test_data.index)
@@ -98,7 +100,8 @@ class AlgoRunner:
         # define the model
         model = ARIMA(self.train_data, order=(ar_order, 0, 0))
         model_fit = self.fit_model(model)
-        self.predict(model_fit, 'AR')
+        predictions = self.predict(model_fit, 'AR')
+        self.print_accuracy(predictions)
 
     def run_ma_regressor(self, ma_order=1):
         """
@@ -108,7 +111,8 @@ class AlgoRunner:
         # define the model
         model = ARIMA(self.train_data, order=(0, 0, ma_order))
         model_fit = self.fit_model(model)
-        self.predict(model_fit, 'MA')
+        predictions = self.predict(model_fit, 'MA')
+        self.print_accuracy(predictions)
 
     def run_arma_regressor(self, ar_order=1, ma_order=1):
         """
@@ -119,7 +123,8 @@ class AlgoRunner:
         # define the model
         model = ARIMA(self.train_data, order=(ar_order, 0, ma_order))
         model_fit = self.fit_model(model)
-        self.predict(model_fit, 'ARMA')
+        predictions = self.predict(model_fit, 'ARMA')
+        self.print_accuracy(predictions)
 
     def run_arima_regressor(self, ar_order=1, diff_order=1, ma_order=1):
         """
@@ -130,4 +135,21 @@ class AlgoRunner:
         """
         model = ARIMA(self.train_data, order=(ar_order, diff_order, ma_order))
         model_fit = self.fit_model(model)
-        self.predict(model_fit, 'ARIMA')
+        predictions = self.predict(model_fit, 'ARIMA')
+        self.print_accuracy(predictions)
+
+    def print_accuracy(self, predictions):
+        """
+        Print the model accuracy using various metrics.
+        :param predictions: The model predictions.
+        """
+        print('###----Metrics for model accuracy---###')
+        MAPE = mean_absolute_percentage_error(self.test_data, predictions)
+        MAE = mean_absolute_error(self.test_data, predictions)
+        MSE = mean_squared_error(self.test_data, predictions)
+        print('Mean Absolute percentage error: ', MAPE)
+        print('Model accuracy: ', 1-MAPE)
+        print('Test Data Mean: ', np.mean(self.test_data.iloc[:, 0]))
+        print('Mean Absolute error', MAE)
+        print('Mean Squared Error:', MSE)
+        print('Root Mean Squared Error:', np.sqrt(MSE))

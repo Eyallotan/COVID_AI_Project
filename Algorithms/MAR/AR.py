@@ -213,13 +213,11 @@ if __name__ == "__main__":
     # run transformations
     # test_transformations(time_series)
 
-    transformer = DataTransformation(time_series)
-    diff_time_series = transformer.difference(1)
     # Get training and test sets
-    train_end = datetime(2021, 8, 5)
-    test_end = datetime(2021, 8, 8)
-    runner = AlgoRunner(diff_time_series, train_end, test_end)
-    runner.run_arma_regressor(5, 6)
+    train_end = datetime(2021, 8, 1)
+    test_end = datetime(2021, 8, 30)
+    runner = AlgoRunner(time_series, train_end, test_end)
+    runner.run_arma_regressor(5, 6, use_rolling_forecast=True)
 
 
 

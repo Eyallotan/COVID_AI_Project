@@ -84,8 +84,8 @@ class StationarityTests:
             print(df_results)
 
 
-def test_transformations(time_series, val_name):
-    transformer = DataTransformation(time_series.copy(), val_name)
+def test_transformations(time_series):
+    transformer = DataTransformation(time_series.copy())
     s_test = StationarityTests()
 
     # Difference transformation
@@ -106,7 +106,7 @@ def test_transformations(time_series, val_name):
     print("Is the time series stationary? {0}".format(s_test.is_stationary))
 
     # take diff on top of sqrt transformation
-    sqrt_transform = DataTransformation(sqrt_time_series, val_name)
+    sqrt_transform = DataTransformation(sqrt_time_series)
     sqrt_diff_time_series = sqrt_transform.difference(1)
     plot_time_series(sqrt_diff_time_series, 'Square root and Diff(1) transformation',
                      'Transformation values')
@@ -127,7 +127,7 @@ def test_transformations(time_series, val_name):
     s_test.ADF_Stationarity_Test(log_transformation, printResults=True)
     print("Is the time series stationary? {0}".format(s_test.is_stationary))
     # take diff on top of log transformation
-    log_transformation = DataTransformation(log_transformation, val_name)
+    log_transformation = DataTransformation(log_transformation)
     log_diff_time_series = log_transformation.difference(1)
     plot_time_series(log_diff_time_series, 'Log and Diff(1) transformation', 'Transformation '
                                                                              'values')
@@ -143,7 +143,7 @@ def test_transformations(time_series, val_name):
     s_test.ADF_Stationarity_Test(standardized_time_series, printResults=True)
     print("Is the time series stationary? {0}".format(s_test.is_stationary))
     # take log on top of standardization transformation
-    standardized_time_series = DataTransformation(standardized_time_series, val_name)
+    standardized_time_series = DataTransformation(standardized_time_series)
     standardized_log_time_series = standardized_time_series.log(1)
     plot_time_series(standardized_log_time_series, 'Standardization and Log transformation',
                      'Transformation values')
@@ -151,7 +151,7 @@ def test_transformations(time_series, val_name):
     print("Is the time series stationary? {0}".format(s_test.is_stationary))
 
     # take diff on top of standardization and log transformation
-    standardized_log_time_series = DataTransformation(standardized_log_time_series, val_name)
+    standardized_log_time_series = DataTransformation(standardized_log_time_series)
     standardized_log_diff_time_series = standardized_log_time_series.difference(1)
     plot_time_series(standardized_log_diff_time_series, 'Standardization, Log and Diff(1) '
                                                         'transformation', 'Transformation values')
@@ -161,7 +161,7 @@ def test_transformations(time_series, val_name):
 
     # generate standardized time series and then apply inverse transformation to get back the
     # original time series
-    transformer = DataTransformation(time_series.copy(), val_name)
+    transformer = DataTransformation(time_series.copy())
     standardized_time_series = transformer.standardization()
     print('Standardized time series:\n', standardized_time_series.head())
     original_time_series = transformer.invert_standardization(standardized_time_series)
@@ -211,13 +211,15 @@ if __name__ == "__main__":
     time_series = generate_time_series(city_code=5000)
 
     # run transformations
-    # test_transformations(time_series, 'daily_new_cases')
+    # test_transformations(time_series)
 
+    transformer = DataTransformation(time_series)
+    diff_time_series = transformer.difference(1)
     # Get training and test sets
-    train_end = datetime(2021, 9, 5)
-    test_end = datetime(2021, 9, 11)
-    runner = AlgoRunner(time_series, train_end, test_end)
-    runner.plot_correlation_plots(20)
+    train_end = datetime(2021, 8, 5)
+    test_end = datetime(2021, 8, 8)
+    runner = AlgoRunner(diff_time_series, train_end, test_end)
+    runner.run_arma_regressor(5, 6)
 
 
 

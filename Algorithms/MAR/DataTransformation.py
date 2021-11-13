@@ -8,9 +8,8 @@ class DataTransformation:
     For each transformation operator there is a inverse operator that can transform the data
     back to it's original form.
     """
-    def __init__(self, data, value_name):
+    def __init__(self, data):
         self.time_series = data
-        self.value_name = value_name
         self.scaler = StandardScaler()
 
     def difference(self, interval=1):
@@ -28,7 +27,7 @@ class DataTransformation:
         :return: Time series with applied square root transformation.
         """
         sqrt_time_series = self.time_series.copy()
-        sqrt_time_series[self.value_name] = np.sqrt(sqrt_time_series[self.value_name])
+        sqrt_time_series.iloc[:, 0] = np.sqrt(sqrt_time_series.iloc[:, 0])
         return sqrt_time_series
 
     def pow(self):
@@ -37,7 +36,7 @@ class DataTransformation:
         :return: Time series with applied pow transformation.
         """
         pow_time_series = self.time_series.copy()
-        pow_time_series[self.value_name] = np.power((pow_time_series[self.value_name]), 2)
+        pow_time_series.iloc[:, 0] = np.power((pow_time_series.iloc[:, 0]), 2)
         return pow_time_series
 
     def log(self, increment_val=0):
@@ -51,7 +50,7 @@ class DataTransformation:
         """
         log_time_series = self.time_series.copy()
         log_time_series += increment_val
-        log_time_series[self.value_name] = np.log2((log_time_series[self.value_name]))
+        log_time_series.iloc[:, 0] = np.log2((log_time_series.iloc[:, 0]))
         return log_time_series
 
     def exp(self, decrement_val=0):
@@ -63,7 +62,7 @@ class DataTransformation:
         :return: Time series with applied exp transformation.
         """
         exp_time_series = self.time_series.copy()
-        exp_time_series[self.value_name] = np.exp((exp_time_series[self.value_name]))
+        exp_time_series.iloc[:, 0] = np.exp((exp_time_series.iloc[:, 0]))
         exp_time_series -= decrement_val
         return exp_time_series
 

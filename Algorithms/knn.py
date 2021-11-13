@@ -135,11 +135,10 @@ def run_knn_on_small_cities(population, k, train_df, test_df):
     population_df = pd.read_csv('../Resources/population_table.csv')
     population_df = population_df[['City_Code', 'population']].drop_duplicates()
 
-    train_df = train_df.merge(population_df, on=["City_Code"])
     test_df = test_df.merge(population_df, on=["City_Code"])
 
-    train_df = train_df[train_df['population'] <= population]
     test_df = test_df[test_df['population'] <= population]
+    test_df.drop(['population'], axis=1, inplace=True)
 
     acc = run_knn(k, train_df, test_df)
     print(f'knn_on_small_cities accuracy: {acc}, population={population}')
@@ -148,47 +147,43 @@ def run_knn_on_big_cities(population, k, train_df, test_df):
     population_df = pd.read_csv('../Resources/population_table.csv')
     population_df = population_df[['City_Code', 'population']].drop_duplicates()
 
-    train_df = train_df.merge(population_df, on=["City_Code"])
     test_df = test_df.merge(population_df, on=["City_Code"])
 
-    train_df = train_df[train_df['population'] >= population]
     test_df = test_df[test_df['population'] >= population]
+    test_df.drop(['population'], axis=1, inplace=True)
 
     acc = run_knn(k, train_df, test_df)
     print(f'knn_on_big_cities accuracy: {acc}, population={population}')
 
 def run_knn_on_small_new_cases(new_cases, k, train_df, test_df):
-    population_df = pd.read_csv('../Resources/population_table.csv')
-    population_df = population_df[['City_Code', 'population']].drop_duplicates()
-
-    train_df = train_df.merge(population_df, on=["City_Code"])
-    test_df = test_df.merge(population_df, on=["City_Code"])
-
-    train_df = train_df[train_df['today_verified_cases'] <= new_cases]
     test_df = test_df[test_df['today_verified_cases'] <= new_cases]
-
     acc = run_knn(k, train_df, test_df)
     print(f'knn_on_small_new_cases accuracy: {acc}, new_cases {new_cases}')
 
 
 def run_knn_on_big_new_cases(new_cases, k, train_df, test_df):
-    population_df = pd.read_csv('../Resources/population_table.csv')
-    population_df = population_df[['City_Code', 'population']].drop_duplicates()
-
-    train_df = train_df.merge(population_df, on=["City_Code"])
-    test_df = test_df.merge(population_df, on=["City_Code"])
-
-    train_df = train_df[train_df['today_verified_cases'] >= new_cases]
     test_df = test_df[test_df['today_verified_cases'] >= new_cases]
 
     acc = run_knn(k, train_df, test_df)
     print(f'knn_on_big_new_cases accuracy: {acc}, new_cases {new_cases}')
+
+
+def run_knn_on_colour(colour, k, train_df, test_df):
+    test_df = test_df[test_df['colour'] == colour]
+
+    acc = run_knn(k, train_df, test_df)
+    print(f'knn_on_big_new_cases accuracy: {acc}, colour {colour}')
+
 
 def experiment_subset_data(k, train_df, test_df):
     run_knn_on_small_cities(10000, k, train_df, test_df)
     run_knn_on_small_cities(100000, k, train_df, test_df)
     run_knn_on_small_new_cases(30, k, train_df, test_df)
     run_knn_on_big_new_cases(400, k, train_df, test_df)
+    run_knn_on_colour(0, k, train_df, test_df)
+    run_knn_on_colour(1, k, train_df, test_df)
+    run_knn_on_colour(2, k, train_df, test_df)
+    run_knn_on_colour(3, k, train_df, test_df)
 
 
 if __name__ == "__main__":
@@ -197,7 +192,7 @@ if __name__ == "__main__":
     test_df = pd.read_csv('../Preprocess/test_df.csv')
 
     best_columns = ['vaccinated_dose_3_total', 'dose_3_in_last_2_week', 'verified_cases_7_days_ago', 'City_Code',
-                    'verified_cases_14_days_ago', 'today_verified_cases']
+                    'verified_cases_14_days_ago', 'today_verified_cases', 'colour']  # 'colour' is not realy part of the best columns
 
     # data = preprocess(data)
     # model, X_test, y_test = init_model(data)

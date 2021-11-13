@@ -95,6 +95,7 @@ def experiment_features(examples, columns):
         print(f'm={m}')
         experiment_m_features(m, examples, columns)
 
+
 def experiment_m_features(m, examples, columns):
     kf = KFold(n_splits=5, shuffle=True, random_state=307916502)
     for i in range(10):
@@ -109,6 +110,7 @@ def experiment_m_features(m, examples, columns):
 
         avg_accuracy = sum / kf.n_splits
         print(f'accuracy: {avg_accuracy}, columns={test_columns}')
+
 
 def experiment_k(examples):
     kf = KFold(n_splits=5, shuffle=True, random_state=307916502)
@@ -131,6 +133,7 @@ def experiment_k(examples):
     plt.ylabel('accuracy')
     plt.show()
 
+
 def run_knn_on_small_cities(population, k, train_df, test_df):
     population_df = pd.read_csv('../Resources/population_table.csv')
     population_df = population_df[['City_Code', 'population']].drop_duplicates()
@@ -143,6 +146,7 @@ def run_knn_on_small_cities(population, k, train_df, test_df):
     acc = run_knn(k, train_df, test_df)
     print(f'knn_on_small_cities accuracy: {acc}, population={population}')
 
+
 def run_knn_on_big_cities(population, k, train_df, test_df):
     population_df = pd.read_csv('../Resources/population_table.csv')
     population_df = population_df[['City_Code', 'population']].drop_duplicates()
@@ -154,6 +158,7 @@ def run_knn_on_big_cities(population, k, train_df, test_df):
 
     acc = run_knn(k, train_df, test_df)
     print(f'knn_on_big_cities accuracy: {acc}, population={population}')
+
 
 def run_knn_on_small_new_cases(new_cases, k, train_df, test_df):
     test_df = test_df[test_df['today_verified_cases'] <= new_cases]

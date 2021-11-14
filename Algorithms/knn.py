@@ -1,12 +1,32 @@
+from random import sample
 from datetime import datetime
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neighbors import KNeighborsRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold
 
 from Preprocess.utils import DataParams
+
+cols = ['City_Code','Cumulative_verified_cases',
+        'Cumulated_recovered','Cumulated_deaths','Cumulated_number_of_tests',
+        'Cumulated_number_of_diagnostic_tests','colour','final_score',
+        'vaccinated_dose_1_total','vaccinated_dose_2_total','vaccinated_dose_3_total',
+        'dose_1_in_last_1_week','dose_1_in_last_2_week','dose_1_in_last_3_week',
+        'dose_1_in_last_4_week','dose_2_in_last_1_week','dose_2_in_last_2_week',
+        'dose_2_in_last_3_week','dose_2_in_last_4_week','dose_3_in_last_1_week',
+        'dose_3_in_last_2_week','dose_3_in_last_3_week','dose_3_in_last_4_week',
+        'verified_cases_1_days_ago','verified_cases_2_days_ago',
+        'verified_cases_3_days_ago','verified_cases_4_days_ago','verified_cases_5_days_ago',
+        'verified_cases_6_days_ago','verified_cases_7_days_ago','verified_cases_8_days_ago',
+        'verified_cases_9_days_ago','verified_cases_10_days_ago',
+        'verified_cases_11_days_ago','verified_cases_12_days_ago','verified_cases_13_days_ago',
+        'verified_cases_14_days_ago'] # 'Date','today_verified_cases','City_Name',
+tlv_code = 5000
+haifa_code = 4000
+min = '2021-01-20'
+max = '2021-09-11'
 
 
 def play_knn():
@@ -22,7 +42,7 @@ def play_knn():
     haifa_tlv_data = haifa_tlv_data[(haifa_tlv_data['Date'] > start_date) & (haifa_tlv_data['Date'] < end_date)]
     with_answers = haifa_tlv_data.copy()
 
-    neigh = KNeighborsClassifier(n_neighbors=3)
+    neigh = KNeighborsRegressor(n_neighbors=3)
     Y = haifa_tlv_data['today_verified_cases']
     haifa_tlv_data.drop(['today_verified_cases', 'City_Name', 'Date'], axis=1, inplace=True)
     X = haifa_tlv_data
@@ -40,83 +60,73 @@ def preprocess(data):
     N = params.number_of_days_for_infected_stats
     daily_new_cases_columns = []
     vaccination_columns = []#['vaccinated_dose_1_total', 'vaccinated_dose_2_total', 'dose_1_in_last_1_week', 'dose_1_in_last_2_week', 'dose_2_in_last_3_week']  # TODO: use them later
-    for i in range(2, N + 2):
+    # for i in range(2, N + 2):
+    for i in range(2, 7):
         daily_new_cases_columns.append(f'verified_cases_{i - 1}_days_ago')
+    # prod_cols = ['colour','final_score',
+    #              'vaccinated_dose_1_total','vaccinated_dose_2_total','vaccinated_dose_3_total',
+    #              'dose_1_in_last_1_week','dose_1_in_last_2_week','dose_1_in_last_3_week',
+    #              'dose_1_in_last_4_week','dose_2_in_last_1_week','dose_2_in_last_2_week',
+    #              'dose_2_in_last_3_week','dose_2_in_last_4_week','dose_3_in_last_1_week',
+    #              'dose_3_in_last_2_week','dose_3_in_last_3_week','dose_3_in_last_4_week',
+    #              'verified_cases_1_days_ago','verified_cases_2_days_ago',
+    #              'verified_cases_3_days_ago','verified_cases_4_days_ago','verified_cases_5_days_ago',
+    #              'verified_cases_6_days_ago','verified_cases_7_days_ago','verified_cases_8_days_ago',
+    #              'verified_cases_9_days_ago','verified_cases_10_days_ago',
+    #              'verified_cases_11_days_ago','verified_cases_12_days_ago','verified_cases_13_days_ago',
+    #              'verified_cases_14_days_ago']
+    # data = data[base_columns + prod_cols]  #+ daily_new_cases_columns + vaccination_columns]
     data = data[base_columns + daily_new_cases_columns + vaccination_columns]
     return data
 
 
-def init_model(data):
-    neigh = KNeighborsClassifier(n_neighbors=3)
-    Y = data['today_verified_cases']
-    data.drop(['today_verified_cases'], axis=1, inplace=True)
-    X = data
-    X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.4, random_state=0)
-    neigh.fit(X_train.values, y_train.values)
+def run_knn(k, train, test):
+    neigh = KNeighborsRegressor(n_neighbors=k)
 
-    return neigh, X_test, y_test
+    y_train = train['today_verified_cases'].values
+    x_train = train.loc[:, train.columns != 'today_verified_cases']
+    neigh.fit(x_train.values, y_train)
 
+    y_test = test['today_verified_cases'].values
+    x_test = test.loc[:, test.columns != 'today_verified_cases']
+    acc = neigh.score(x_test.values, y_test)
 
-def check_score_function(model, X_test, y_test):
-    row159 = [X_test.iloc[159]]
-    y159 = y_test.iloc[159]
-    ypred159 = model.predict(row159)
-    print(f'y: {y159}, y_hat: {ypred159}')
-    acc = model.score(row159, [133])
-    print(f'159 accuracy: {acc}')  # Conclustion: score gives 1 only if same result
+    return acc
 
 
-def evaluate_model(model, X_test, y_test):
-    acc = model.score(X_test.values, y_test.values)
-    print(f'knn accuracy: {acc}')
-
-    print('exact eval:')
-    exact = 0
-    for index, row in X_test.iterrows():
-        ypred = model.predict([row.values])
-        if ypred == y_test[index]:
-            exact+=1
-
-    print(f'exact acc: {exact/len(X_test)}. exact: {exact}, len_test: {len(X_test)}')
-
-    print('second accuracy:')
-    diffs = []
-    for index, row in X_test.iterrows():
-        ypred = model.predict([row.values])
-        # if ypred - y_test[index] == 0:
-        #     continue
-        if y_test[index] == 0:
-            if ypred == 0:
-                diffs.append(0)
-            else:
-                diffs.append(1)  # 1 for max error. abs(ypred) is not good
-        else:
-            acc = abs(ypred - y_test[index]) / y_test[index]
-            diffs.append(acc[0])
-
-    print(f'second accuracy: {1 - np.mean(diffs)}')
+def experiment_features(examples, columns):
+    for m in range(5, 15):
+        print(f'm={m}')
+        experiment_m_features(m, examples, columns)
 
 
-def experiment(examples):
+def experiment_m_features(m, examples, columns):
     kf = KFold(n_splits=5, shuffle=True, random_state=307916502)
-    K = range(3, 50)
+    for i in range(10):
+        test_columns = sample(columns, m) + ['today_verified_cases']
+        experiment_examples = examples[test_columns]
+        sum = 0
+        for train_index, test_index in kf.split(examples):
+            train_examples, test_examples = experiment_examples.iloc[train_index], \
+                                            experiment_examples.iloc[test_index]
+            acc = run_knn(5, train_examples, test_examples)
+            sum += acc
+
+        avg_accuracy = sum / kf.n_splits
+        print(f'accuracy: {avg_accuracy}, columns={test_columns}')
+
+
+def experiment_k(examples):
+    kf = KFold(n_splits=5, shuffle=True, random_state=307916502)
+    K = range(3, 15)
     accuracies = []
     for k in K:
         print(f'k:{k}')
         sum = 0
         for train_index, test_index in kf.split(examples):
-            neigh = KNeighborsClassifier(n_neighbors=k)
             train_examples, test_examples = examples.iloc[train_index], examples.iloc[test_index]
 
-            y_train = train_examples['today_verified_cases'].values
-            x_train = train_examples.loc[:, train_examples.columns != 'today_verified_cases']
-            neigh.fit(x_train.values, y_train)
-
-            y_test = test_examples['today_verified_cases'].values
-            x_test = test_examples.loc[:, test_examples.columns != 'today_verified_cases']
-            acc = neigh.score(x_test.values, y_test)
-            # print(f'k={k}, knn accuracy: {acc}')
-
+            acc = run_knn(k, train_examples,test_examples)
             sum += acc
         avg_accuracy = sum / kf.n_splits
         accuracies.append(avg_accuracy)
@@ -127,11 +137,105 @@ def experiment(examples):
     plt.ylabel('accuracy')
     plt.show()
 
+
+def run_knn_on_small_cities(population, k, train_df, test_df):
+    population_df = pd.read_csv('../Resources/population_table.csv')
+    population_df = population_df[['City_Code', 'population']].drop_duplicates()
+
+    test_df = test_df.merge(population_df, on=["City_Code"])
+
+    test_df = test_df[test_df['population'] <= population]
+    test_df.drop(['population'], axis=1, inplace=True)
+
+    acc = run_knn(k, train_df, test_df)
+    print(f'knn_on_small_cities accuracy: {acc}, population={population}')
+
+
+def run_knn_on_big_cities(population, k, train_df, test_df):
+    population_df = pd.read_csv('../Resources/population_table.csv')
+    population_df = population_df[['City_Code', 'population']].drop_duplicates()
+
+    test_df = test_df.merge(population_df, on=["City_Code"])
+
+    test_df = test_df[test_df['population'] >= population]
+    test_df.drop(['population'], axis=1, inplace=True)
+
+    acc = run_knn(k, train_df, test_df)
+    print(f'knn_on_big_cities accuracy: {acc}, population={population}')
+
+
+def run_knn_on_small_new_cases(new_cases, k, train_df, test_df):
+    test_df = test_df[test_df['today_verified_cases'] <= new_cases]
+    acc = run_knn(k, train_df, test_df)
+    print(f'knn_on_small_new_cases accuracy: {acc}, new_cases {new_cases}')
+
+
+def run_knn_on_big_new_cases(new_cases, k, train_df, test_df):
+    test_df = test_df[test_df['today_verified_cases'] >= new_cases]
+
+    acc = run_knn(k, train_df, test_df)
+    print(f'knn_on_big_new_cases accuracy: {acc}, new_cases {new_cases}')
+
+
+def run_knn_on_colour(colour, k, train_df, test_df):
+    test_df = test_df[test_df['colour'] == colour]
+
+    acc = run_knn(k, train_df, test_df)
+    print(f'knn_on_big_new_cases accuracy: {acc}, colour {colour}')
+
+
+def run_knn_on_dates(k, train_df, test_df, start_date, end_date, best_columns):
+    test_df['Date'] = pd.to_datetime(test_df['Date'])
+    test_df = test_df[(test_df['Date'] >= start_date) & (test_df['Date'] <= end_date)]
+    test_df = test_df[best_columns]
+    acc = run_knn(k, train_df, test_df)
+    print(f'knn_on_big_new_cases accuracy: {acc}, start_date {start_date}, , end_date {end_date}')
+
+
+def experiment_subset_data(k, train_df, test_df, full_test_df, best_columns):
+    run_knn_on_small_cities(10000, k, train_df, test_df)
+    run_knn_on_small_cities(100000, k, train_df, test_df)
+    run_knn_on_small_new_cases(30, k, train_df, test_df)
+    run_knn_on_big_new_cases(400, k, train_df, test_df)
+    run_knn_on_colour(0, k, train_df, test_df)
+    run_knn_on_colour(1, k, train_df, test_df)
+    run_knn_on_colour(2, k, train_df, test_df)
+    run_knn_on_colour(3, k, train_df, test_df)
+
+    start_date = datetime(2021, 1, 20)
+    end_date = datetime(2021, 3, 20)
+    run_knn_on_dates(k, train_df, full_test_df, start_date, end_date, best_columns)
+
+    start_date = datetime(2021, 3, 20)
+    end_date = datetime(2021, 5, 20)
+    run_knn_on_dates(k, train_df, full_test_df, start_date, end_date, best_columns)
+
+    start_date = datetime(2021, 5, 20)
+    end_date = datetime(2021, 7, 20)
+    run_knn_on_dates(k, train_df, full_test_df, start_date, end_date, best_columns)
+
+    start_date = datetime(2021, 7, 20)
+    end_date = datetime(2021, 9, 11)
+    run_knn_on_dates(k, train_df, full_test_df, start_date, end_date, best_columns)
+
+
 if __name__ == "__main__":
     # play_knn()
     data = pd.read_csv('train_df.csv')
-    data = preprocess(data)
+    data.sort_values(by=['City_Code', 'Date'], inplace=True)
 
-    experiment(data)
+    train_df = pd.read_csv('../Preprocess/train_df.csv')
+    full_test_df = pd.read_csv('../Preprocess/test_df.csv')
+
+    best_columns = ['vaccinated_dose_3_total', 'dose_3_in_last_2_week', 'verified_cases_7_days_ago', 'City_Code',
+                    'verified_cases_14_days_ago', 'today_verified_cases', 'colour']  # 'colour' is not realy part of the best columns
+
+    # data = preprocess(data)
     # model, X_test, y_test = init_model(data)
-    # evaluate_model(model, X_test, y_test)
+    train_df = train_df[best_columns]
+    test_df = full_test_df[best_columns]
+    # acc = run_knn(5, train_df, test_df)
+    # print(f'knn accuracy: {acc}')
+    # experiment_k(train_df[best_columns])
+    # experiment_features(train_df, cols)
+    experiment_subset_data(5, train_df, test_df, full_test_df, best_columns)

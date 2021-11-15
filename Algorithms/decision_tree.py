@@ -8,17 +8,15 @@ from sklearn.feature_selection import RFE
 from sklearn.model_selection import KFold
 from sklearn.model_selection import cross_val_score
 
-font = {'weight' : 'bold',
-        'size'   : 16}
-
-plt.rc('font', **font)
+# font = {'weight' : 'bold',
+#         'size'   : 16}
+#
+# plt.rc('font', **font)
 
 def get_train_and_test_df():
     train_df = pd.read_csv('../Preprocess/train_df.csv')
-    # train_df = train_df.drop(['City_Name', 'City_Code', 'Date'], axis=1)
     train_df = train_df.drop(['City_Name', 'Date'], axis=1)
     test_df = pd.read_csv('../Preprocess/test_df.csv')
-    # test_df = test_df.drop(['City_Name', 'City_Code', 'Date'], axis=1)
     test_df = test_df.drop(['City_Name', 'Date'], axis=1)
 
     return train_df, test_df
@@ -118,7 +116,7 @@ def print_RFE_scores(regressor_scores, regressor_type):
     plt.show()
 
 
-def get_best_RFE_results_for_DTR_or_RFR(X_train, Y_train, X_test, Y_test, corona_df_no_pred_col, regressor_type, leaf_samples_range):
+def get_best_RFE_results_for_DTR_or_RFR(X_train, Y_train, X_test, corona_df_no_pred_col, regressor_type, leaf_samples_range):
     best_score = 0
     best_index = 1
     best_features = []
@@ -142,16 +140,13 @@ def get_best_RFE_results_for_DTR_or_RFR(X_train, Y_train, X_test, Y_test, corona
                 regressor = RandomForestRegressor(n_estimators=10, random_state=1, min_samples_leaf=leaf_samples)
 
             X_train_rfe = sel.transform(X_train)
-            X_test_rfe = sel.transform(X_test)
             regressor.fit(X_train_rfe, Y_train)
             selected_features = [col for col in corona_df_no_pred_col]
             features = np.array(selected_features)[sel.get_support()]
 
             cv = KFold(n_splits=5, random_state=204098784, shuffle=True)
-            # evaluate model
             scores = cross_val_score(regressor, X_train_rfe, Y_train, cv=cv, n_jobs=-1)
             mean_scores = np.mean(scores)
-            # regressor_score = regressor.score(X_test_rfe, Y_test)
 
             if regressor_type == "DecisionTreeRegressor" and leaf_samples == 1:
                 DT_scores_vec.append(mean_scores)
@@ -229,29 +224,29 @@ def get_RFE_best_features_and_best_min_samples_leaf():
 
     train_df_no_pred_col = train_df.drop(['today_verified_cases'], axis=1)
 
-    # DT_best_results = get_best_RFE_results_for_DTR_or_RFR(X_train, Y_train, X_test, Y_test, train_df_no_pred_col,
-    #                                                  "DecisionTreeRegressor", 1)
-    #
-    # print_best_RFE_results(DT_best_results, "DecisionTreeRegressor")
-    #
-    # RF_best_results = get_best_RFE_results_for_DTR_or_RFR(X_train, Y_train, X_test, Y_test, train_df_no_pred_col,
-    #                                                  "RandomForestRegressor", 1)
-    # print_best_RFE_results(RF_best_results, "RandomForestRegressor")
+    DT_best_results = get_best_RFE_results_for_DTR_or_RFR(X_train, Y_train, X_test, train_df_no_pred_col,
+                                                     "DecisionTreeRegressor", 1)
 
-    DT_best_results = get_best_RFE_results_for_DTR_or_RFR(X_train, Y_train, X_test, Y_test, train_df_no_pred_col,
-                                                     "DecisionTreeRegressor", 10)
     print_best_RFE_results(DT_best_results, "DecisionTreeRegressor")
 
-    RF_best_results = get_best_RFE_results_for_DTR_or_RFR(X_train, Y_train, X_test, Y_test, train_df_no_pred_col,
-                                                     "RandomForestRegressor", 10)
+    RF_best_results = get_best_RFE_results_for_DTR_or_RFR(X_train, Y_train, X_test, train_df_no_pred_col,
+                                                     "RandomForestRegressor", 1)
     print_best_RFE_results(RF_best_results, "RandomForestRegressor")
+
+    # DT_best_results = get_best_RFE_results_for_DTR_or_RFR(X_train, Y_train, X_test, train_df_no_pred_col,
+    #                                                  "DecisionTreeRegressor", 10)
+    # print_best_RFE_results(DT_best_results, "DecisionTreeRegressor")
+    #
+    # RF_best_results = get_best_RFE_results_for_DTR_or_RFR(X_train, Y_train, X_test, train_df_no_pred_col,
+    #                                                  "RandomForestRegressor", 10)
+    # print_best_RFE_results(RF_best_results, "RandomForestRegressor")
 
     return DT_best_results[2], DT_best_results[3], RF_best_results[2], RF_best_results[3]
 
 
 def run_part_B():
     # print_features_importances("DecisionTreeRegressor")
-    # print_features_importances("RandomForestRegressor")
+    print_features_importances("RandomForestRegressor")
 
     # DT_best_features, DT_best_min_samples_leaf, RF_best_features, RF_best_min_samples_leaf = get_RFE_best_features_and_best_min_samples_leaf()
 
@@ -298,11 +293,6 @@ def run_part_B():
     print('\n')
 
 
-#######################################################################################################################
-################################################### PART B ############################################################
-#######################################################################################################################
-#######################################################################################################################
-
 def get_best_decision_tree_regressor():
     RF_best_min_samples_leaf = 1
     RF_best_features = ['City_Code', 'Cumulated_deaths', 'verified_cases_7_days_ago']
@@ -318,6 +308,12 @@ def get_best_decision_tree_regressor():
     RF_regressor.fit(X_train, Y_train)
 
     return RF_regressor
+
+
+#######################################################################################################################
+################################################### PART B ############################################################
+#######################################################################################################################
+#######################################################################################################################
 
 
 def run_decision_tree_on_small_cities(population):
@@ -440,8 +436,8 @@ def sub_test_sets_experiments():
 
 if __name__ == "__main__":
     # run_part_A()
-    # run_part_B()
-    sub_test_sets_experiments()
+    run_part_B()
+    # sub_test_sets_experiments()
 
 
 

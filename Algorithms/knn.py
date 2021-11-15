@@ -221,8 +221,8 @@ def experiment_subset_data(k, train_df, test_df, full_test_df, best_columns):
 
 if __name__ == "__main__":
     # play_knn()
-    data = pd.read_csv('train_df.csv')
-    data.sort_values(by=['City_Code', 'Date'], inplace=True)
+    # data = pd.read_csv('train_df.csv')
+    # data.sort_values(by=['City_Code', 'Date'], inplace=True)
 
     train_df = pd.read_csv('../Preprocess/train_df.csv')
     full_test_df = pd.read_csv('../Preprocess/test_df.csv')

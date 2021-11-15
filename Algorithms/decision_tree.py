@@ -1,3 +1,4 @@
+from datetime import datetime
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -14,9 +15,11 @@ plt.rc('font', **font)
 
 def get_train_and_test_df():
     train_df = pd.read_csv('../Preprocess/train_df.csv')
-    train_df = train_df.drop(['City_Name', 'City_Code', 'Date'], axis=1)
+    # train_df = train_df.drop(['City_Name', 'City_Code', 'Date'], axis=1)
+    train_df = train_df.drop(['City_Name', 'Date'], axis=1)
     test_df = pd.read_csv('../Preprocess/test_df.csv')
-    test_df = test_df.drop(['City_Name', 'City_Code', 'Date'], axis=1)
+    # test_df = test_df.drop(['City_Name', 'City_Code', 'Date'], axis=1)
+    test_df = test_df.drop(['City_Name', 'Date'], axis=1)
 
     return train_df, test_df
 
@@ -28,11 +31,6 @@ def get_X_and_Y_tarin_test_sets(train_df, test_df):
     Y_test = test_df['today_verified_cases'].values
 
     return X_train, Y_train, X_test, Y_test
-
-
-def mean_percentage_accuracy(Y_test, Y_pred):
-    Y_test, Y_pred = np.array(Y_test), np.array(Y_pred)
-    return 1 - np.mean(np.abs((Y_test - Y_pred) / Y_test))
 
 
 #######################################################################################################################
@@ -90,7 +88,7 @@ def run_part_A():
     print(f"RandomForestRegressor Test Set Score : {RF_test_set_res}")
     print('\n')
 
-    # print_y_test_vs_y_predict(Y_test, DT_Y_pred, RF_Y_pred)
+    print_y_test_vs_y_predict(Y_test, DT_Y_pred, RF_Y_pred)
 
 
 #######################################################################################################################
@@ -255,7 +253,18 @@ def run_part_B():
     # print_features_importances("DecisionTreeRegressor")
     # print_features_importances("RandomForestRegressor")
 
-    DT_best_features, DT_best_min_samples_leaf, RF_best_features, RF_best_min_samples_leaf = get_RFE_best_features_and_best_min_samples_leaf()
+    # DT_best_features, DT_best_min_samples_leaf, RF_best_features, RF_best_min_samples_leaf = get_RFE_best_features_and_best_min_samples_leaf()
+
+    # # no pruning:
+    # DT_best_features = ['City_Code', 'Cumulated_deaths', 'vaccinated_dose_1_total', 'dose_1_in_last_4_week',
+    #                     'verified_cases_7_days_ago']
+    #
+    # RF_best_features = ['City_Code', 'Cumulated_deaths', 'verified_cases_7_days_ago']
+
+    # with pruning:
+    DT_best_features = ['City_Code', 'Cumulated_deaths', 'verified_cases_7_days_ago']
+
+    RF_best_features = ['City_Code', 'Cumulated_deaths', 'verified_cases_7_days_ago']
 
     train_df, test_df = get_train_and_test_df()
 
@@ -296,8 +305,7 @@ def run_part_B():
 
 def get_best_decision_tree_regressor():
     RF_best_min_samples_leaf = 1
-    RF_best_features = ['Cumulated_recovered', 'Cumulated_deaths', 'final_score', 'vaccinated_dose_1_total',
-                        'dose_1_in_last_4_week', 'verified_cases_7_days_ago', 'verified_cases_14_days_ago']
+    RF_best_features = ['City_Code', 'Cumulated_deaths', 'verified_cases_7_days_ago']
     train_df, test_df = get_train_and_test_df()
 
     for col in train_df:
@@ -312,10 +320,128 @@ def get_best_decision_tree_regressor():
     return RF_regressor
 
 
-if __name__ == "__main__":
-    run_part_A()
-    # run_part_B()
+def run_decision_tree_on_small_cities(population):
+    test_df = pd.read_csv('../Preprocess/test_df.csv')
 
+    population_df = pd.read_csv('../Resources/population_table.csv')
+    population_df = population_df[['City_Code', 'population']].drop_duplicates()
+
+    test_df = test_df.merge(population_df, on=["City_Code"])
+    test_df = test_df.drop(['City_Name', 'Date'], axis=1)
+
+    test_df = test_df[test_df['population'] <= population]
+    test_df.drop(['population'], axis=1, inplace=True)
+
+    RF_best_features = ['City_Code', 'Cumulated_deaths', 'verified_cases_7_days_ago']
+
+    for col in test_df:
+        if col not in RF_best_features and col != 'today_verified_cases':
+            test_df = test_df.drop([col], axis=1)
+
+    X_test = test_df[[col for col in test_df if col != 'today_verified_cases']].values
+    Y_test = test_df['today_verified_cases'].values
+
+    best_regressor = get_best_decision_tree_regressor()
+    score = best_regressor.score(X_test, Y_test)
+
+    print(f'desicion_tree_on_cities accuracy: {score}, population={population}')
+
+
+def run_decision_tree_on_small_new_cases(new_cases):
+    test_df = pd.read_csv('../Preprocess/test_df.csv')
+    test_df = test_df.drop(['City_Name', 'Date'], axis=1)
+
+    test_df = test_df[test_df['today_verified_cases'] <= new_cases]
+
+    RF_best_features = ['City_Code', 'Cumulated_deaths', 'verified_cases_7_days_ago']
+
+    for col in test_df:
+        if col not in RF_best_features and col != 'today_verified_cases':
+            test_df = test_df.drop([col], axis=1)
+
+    X_test = test_df[[col for col in test_df if col != 'today_verified_cases']].values
+    Y_test = test_df['today_verified_cases'].values
+
+    best_regressor = get_best_decision_tree_regressor()
+    score = best_regressor.score(X_test, Y_test)
+
+    print(f'decision_tree_on_new_cases accuracy: {score}, new_cases {new_cases}')
+
+
+def run_decision_tree_on_colour(colour):
+    test_df = pd.read_csv('../Preprocess/test_df.csv')
+    test_df = test_df.drop(['City_Name', 'Date'], axis=1)
+
+    test_df = test_df[test_df['colour'] == colour]
+
+    RF_best_features = ['City_Code', 'Cumulated_deaths', 'verified_cases_7_days_ago']
+
+    for col in test_df:
+        if col not in RF_best_features and col != 'today_verified_cases':
+            test_df = test_df.drop([col], axis=1)
+
+    X_test = test_df[[col for col in test_df if col != 'today_verified_cases']].values
+    Y_test = test_df['today_verified_cases'].values
+
+    best_regressor = get_best_decision_tree_regressor()
+    score = best_regressor.score(X_test, Y_test)
+
+    print(f'decision_tree_on_colours accuracy: {score}, colour {colour}')
+
+
+def run_decision_tree_on_dates(start_date, end_date):
+    test_df = pd.read_csv('../Preprocess/test_df.csv')
+
+    test_df['Date'] = pd.to_datetime(test_df['Date'])
+    test_df = test_df[(test_df['Date'] >= start_date) & (test_df['Date'] <= end_date)]
+
+    test_df = test_df.drop(['City_Name', 'Date'], axis=1)
+
+    RF_best_features = ['City_Code', 'Cumulated_deaths', 'verified_cases_7_days_ago']
+
+    for col in test_df:
+        if col not in RF_best_features and col != 'today_verified_cases':
+            test_df = test_df.drop([col], axis=1)
+
+    X_test = test_df[[col for col in test_df if col != 'today_verified_cases']].values
+    Y_test = test_df['today_verified_cases'].values
+
+    best_regressor = get_best_decision_tree_regressor()
+    score = best_regressor.score(X_test, Y_test)
+
+    print(f'decision_tree_on_dates accuracy: {score}, start_date {start_date}, end_date {end_date}')
+
+
+def sub_test_sets_experiments():
+    run_decision_tree_on_small_cities(10000)
+    run_decision_tree_on_small_cities(100000)
+    run_decision_tree_on_small_new_cases(30)
+    run_decision_tree_on_small_new_cases(400)
+    run_decision_tree_on_colour(0)
+    run_decision_tree_on_colour(1)
+    run_decision_tree_on_colour(2)
+    run_decision_tree_on_colour(3)
+
+    start_date = datetime(2021, 1, 20)
+    end_date = datetime(2021, 3, 20)
+    run_decision_tree_on_dates(start_date, end_date)
+
+    start_date = datetime(2021, 3, 20)
+    end_date = datetime(2021, 5, 20)
+    run_decision_tree_on_dates(start_date, end_date)
+
+    start_date = datetime(2021, 5, 20)
+    end_date = datetime(2021, 7, 20)
+    run_decision_tree_on_dates(start_date, end_date)
+
+    start_date = datetime(2021, 7, 20)
+    end_date = datetime(2021, 9, 11)
+    run_decision_tree_on_dates(start_date, end_date)
+
+if __name__ == "__main__":
+    # run_part_A()
+    # run_part_B()
+    sub_test_sets_experiments()
 
 
 

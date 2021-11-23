@@ -201,7 +201,7 @@ def plot_time_series(time_series, title=None, ylabel=None):
     plt.show()
 
 
-def generate_time_series(city_code):
+def generate_time_series_for_city(city_code):
     """
     A simple function that creates a time series for a given city.
     :param city_code: The city that we want to create this time series for.
@@ -217,12 +217,53 @@ def generate_time_series(city_code):
     return time_series
 
 
+def generate_rolling_average_series():
+    """
+    A simple function that creates a time series that holds for each day the 7 day rolling
+    average of new cases.
+    :return: Time rolling average time series.
+    """
+    time_series = pd.read_csv('../../Resources/7_days_rolling_avg_global.csv', index_col=0)
+    time_series.index = pd.to_datetime(time_series.index, format='%d-%m-%Y')
+    start_date = datetime(2020, 2, 12)
+    end_date = datetime(2021, 11, 22)
+    time_series = time_series[(time_series.index >= start_date) & (time_series.index <=
+                                                                   end_date)]
+
+    print('Shape of data \t', time_series.shape)
+    print('Time series:\n', time_series)
+
+    return time_series
+
+def generate_daily_cases_national():
+    """
+    A simple function that creates a time series that holds for each day the total number of new
+    cases.
+    :return: Time daily new cases time series.
+    """
+    time_series = pd.read_csv('../../Resources/daily_cases_global.csv', index_col=0)
+    time_series.index = pd.to_datetime(time_series.index, format='%d-%m-%Y')
+    start_date = datetime(2020, 2, 12)
+    end_date = datetime(2021, 11, 22)
+    time_series = time_series[(time_series.index >= start_date) & (time_series.index <=
+                                                                     end_date)]
+    print('Shape of data \t', time_series.shape)
+    print('Time series:\n', time_series)
+
+    return time_series
+
+
 if __name__ == "__main__":
-    time_series = generate_time_series(city_code=5000)
+    time_series = generate_time_series_for_city(city_code=5000)
+    rolling_average_series = generate_rolling_average_series()
+    national_daily_cases = generate_daily_cases_national()
+
+    plot_time_series(national_daily_cases, 'Daily new cases', 'New Cases')
+    plot_time_series(rolling_average_series, '7 Days rolling average', 'Avg value')
 
     # run transformations
-    test_transformations(time_series)
-    transformer = DataTransformation(time_series)
+    # test_transformations(time_series)
+    # transformer = DataTransformation(time_series)
 
     # s_test = StationarityTests()
     # s_test.ADF_Stationarity_Test(diff_time_series, printResults=True)
@@ -232,7 +273,7 @@ if __name__ == "__main__":
     # train_end = datetime(2021, 8, 20)
     # test_end = datetime(2021, 9, 30)
     # runner = AlgoRunner(time_series, train_end, test_end)
-    
+
 
 
 

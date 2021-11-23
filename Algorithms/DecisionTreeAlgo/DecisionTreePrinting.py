@@ -105,6 +105,46 @@ def print_features_importances(regressor_type):
 #######################################################################################################################
 #######################################################################################################################
 
+#######################################################################################################################
+#######################################################################################################################
+################################################### PART C ############################################################
+#######################################################################################################################
+
+
+def print_r2_score_vs_MAE_score(experiment_func, experiment_type, score_results):
+    if experiment_type == 'City Population':
+        x_ax = [50000, 60000, 70000, 80000, 90000, 100000]
+    if experiment_type == 'Colour':
+        x_ax = [0, 1, 2, 3]
+    if experiment_func == 'R^2':
+        plt.plot(x_ax, score_results, linewidth=1.5, label="R^2 Score Results")
+    if experiment_func == 'MAE':
+        plt.plot(x_ax, score_results, linewidth=1.5, label="MAE Score Results")
+    plt.title(f'{experiment_type} Scores Comparison')
+    plt.ylabel('Score')
+    if experiment_type == 'City Population':
+        plt.xlabel('City Population Amount')
+    if experiment_type == 'Colour':
+        plt.xlabel('Colour Number')
+
+    for x, y in zip(x_ax, score_results):
+        label = float("{:.3f}".format(y))
+
+        plt.annotate(label, (x, y), textcoords="offset points", xytext=(-15, 8), ha='center')
+    for x, y in zip(x_ax, score_results):
+        label = float("{:.3f}".format(y))
+
+        plt.annotate(label, (x, y), textcoords="offset points", xytext=(-15, 8), ha='center')
+
+    plt.legend(loc='best', fancybox=True, shadow=True)
+    plt.grid(True)
+    plt.show()
+
+
+#######################################################################################################################
+################################################### PART C ############################################################
+#######################################################################################################################
+#######################################################################################################################
 
 
 

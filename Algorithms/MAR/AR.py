@@ -85,20 +85,23 @@ class StationarityTests:
 
 
 def test_transformations(time_series):
+    plot_time_series(time_series, 'Original time series', 'Values')
+    # Check for patterns by plotting histogram
+    plt.hist(time_series, bins=30)
+    plt.show()
     transformer = DataTransformation(time_series.copy())
     s_test = StationarityTests()
 
     # Difference transformation
-    time_series_diff = transformer.difference()
+    time_series_diff = transformer.difference(lags=1)
     plot_time_series(time_series_diff, 'Differenced time series', 'Diff values')
     s_test.ADF_Stationarity_Test(time_series_diff, printResults=True)
     print("Is the time series stationary? {0}".format(s_test.is_stationary))
+    # invert diff
+    transformer.invert_difference(time_series_diff, time_series.copy(), lags=1)
     # TODO: Find the best diff operator
 
     # Square root transformation
-    # Check for square root pattern by plotting histogram
-    plt.hist(time_series, bins=30)
-    plt.show()
     sqrt_time_series = transformer.sqrt()
     print('Sqrt time series:\n', sqrt_time_series.head())
     plot_time_series(sqrt_time_series, 'Square root transformation', 'Square root values')
@@ -106,12 +109,16 @@ def test_transformations(time_series):
     print("Is the time series stationary? {0}".format(s_test.is_stationary))
 
     # take diff on top of sqrt transformation
-    sqrt_transform = DataTransformation(sqrt_time_series)
-    sqrt_diff_time_series = sqrt_transform.difference(1)
+    sqrt_diff_time_series = transformer.difference(1)
     plot_time_series(sqrt_diff_time_series, 'Square root and Diff(1) transformation',
                      'Transformation values')
     s_test.ADF_Stationarity_Test(sqrt_diff_time_series, printResults=True)
     print("Is the time series stationary? {0}".format(s_test.is_stationary))
+    # invert transformations
+    transformer.invert_difference(sqrt_diff_time_series, sqrt_time_series, lags=1)
+    inverted = transformer.pow()
+    # print inverted time series
+    plot_time_series(inverted, 'Inverted', 'Values')
 
     # Power transformation
     pow_transformation = transformer.pow()
@@ -119,20 +126,28 @@ def test_transformations(time_series):
     plot_time_series(pow_transformation, 'Power of 2 transformation', 'Power values')
     s_test.ADF_Stationarity_Test(pow_transformation, printResults=True)
     print("Is the time series stationary? {0}".format(s_test.is_stationary))
+    # invert
+    inverted = transformer.sqrt()
+    # print inverted time series
+    plot_time_series(inverted, 'Inverted', 'Values')
 
     # Log transformation
-    log_transformation = transformer.log(1)
-    print('Log2 time series:\n', log_transformation.head())
-    plot_time_series(log_transformation, 'Log transformation', 'Log values')
+    log_transformation = transformer.log(increment_val=1)
+    print('ln time series:\n', log_transformation.head())
+    plot_time_series(log_transformation, 'ln transformation', 'ln values')
     s_test.ADF_Stationarity_Test(log_transformation, printResults=True)
     print("Is the time series stationary? {0}".format(s_test.is_stationary))
     # take diff on top of log transformation
-    log_transformation = DataTransformation(log_transformation)
-    log_diff_time_series = log_transformation.difference(1)
-    plot_time_series(log_diff_time_series, 'Log and Diff(1) transformation', 'Transformation '
+    log_diff_time_series = transformer.difference(lags=1)
+    plot_time_series(log_diff_time_series, 'ln and Diff(1) transformation', 'Transformation '
                                                                              'values')
     s_test.ADF_Stationarity_Test(log_diff_time_series, printResults=True)
     print("Is the time series stationary? {0}".format(s_test.is_stationary))
+    # invert transformations
+    transformer.invert_difference(log_diff_time_series, log_transformation, lags=1)
+    inverted = transformer.exp(1)
+    # print inverted time series
+    plot_time_series(inverted, 'Inverted', 'Values')
 
     # Standardization transformation
     standardized_time_series = transformer.standardization()
@@ -143,29 +158,24 @@ def test_transformations(time_series):
     s_test.ADF_Stationarity_Test(standardized_time_series, printResults=True)
     print("Is the time series stationary? {0}".format(s_test.is_stationary))
     # take log on top of standardization transformation
-    standardized_time_series = DataTransformation(standardized_time_series)
-    standardized_log_time_series = standardized_time_series.log(1)
-    plot_time_series(standardized_log_time_series, 'Standardization and Log transformation',
+    standardized_log_time_series = transformer.log(increment_val=1)
+    plot_time_series(standardized_log_time_series, 'Standardization and ln transformation',
                      'Transformation values')
     s_test.ADF_Stationarity_Test(standardized_log_time_series, printResults=True)
     print("Is the time series stationary? {0}".format(s_test.is_stationary))
 
     # take diff on top of standardization and log transformation
-    standardized_log_time_series = DataTransformation(standardized_log_time_series)
-    standardized_log_diff_time_series = standardized_log_time_series.difference(1)
+    standardized_log_diff_time_series = transformer.difference(lags=1)
     plot_time_series(standardized_log_diff_time_series, 'Standardization, Log and Diff(1) '
                                                         'transformation', 'Transformation values')
-
     s_test.ADF_Stationarity_Test(standardized_log_diff_time_series, printResults=True)
     print("Is the time series stationary? {0}".format(s_test.is_stationary))
-
-    # generate standardized time series and then apply inverse transformation to get back the
-    # original time series
-    transformer = DataTransformation(time_series.copy())
-    standardized_time_series = transformer.standardization()
-    print('Standardized time series:\n', standardized_time_series.head())
-    original_time_series = transformer.invert_standardization(standardized_time_series)
-    print('Original time series:\n', original_time_series.head())
+    # invert transformations
+    transformer.invert_difference(standardized_log_diff_time_series,
+                                  standardized_log_time_series, lags=1)
+    transformer.exp()
+    inverted = transformer.invert_standardization()
+    plot_time_series(inverted, 'Inverted', 'Values')
 
 
 def plot_time_series(time_series, title=None, ylabel=None):
@@ -202,7 +212,7 @@ def generate_time_series(city_code):
     time_series = time_series.asfreq(pd.infer_freq(time_series.index))
 
     print('Shape of data \t', time_series.shape)
-    print('Time series:\n', time_series.head())
+    print('Time series:\n', time_series)
 
     return time_series
 
@@ -211,14 +221,18 @@ if __name__ == "__main__":
     time_series = generate_time_series(city_code=5000)
 
     # run transformations
-    # test_transformations(time_series)
+    test_transformations(time_series)
+    transformer = DataTransformation(time_series)
+
+    # s_test = StationarityTests()
+    # s_test.ADF_Stationarity_Test(diff_time_series, printResults=True)
+    # print("Is the time series stationary? {0}".format(s_test.is_stationary))
 
     # Get training and test sets
-    train_end = datetime(2021, 8, 1)
-    test_end = datetime(2021, 8, 30)
-    runner = AlgoRunner(time_series, train_end, test_end)
-    runner.run_arma_regressor(5, 6, use_rolling_forecast=True)
-
+    # train_end = datetime(2021, 8, 20)
+    # test_end = datetime(2021, 9, 30)
+    # runner = AlgoRunner(time_series, train_end, test_end)
+    
 
 
 

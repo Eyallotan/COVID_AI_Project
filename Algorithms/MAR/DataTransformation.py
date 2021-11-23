@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.preprocessing import StandardScaler
+from datetime import timedelta
 
 
 class DataTransformation:
@@ -12,46 +13,71 @@ class DataTransformation:
         self.time_series = data
         self.scaler = StandardScaler()
 
-    def difference(self, interval=1):
+    def difference(self, lags):
         """
         Transform to a difference time series with a certain interval.
-        :param interval: The difference operator.
+        :param lags: The difference operator.
         :return: Time series with applied diff.
         """
-        assert interval > 0
-        return self.time_series.diff(interval).dropna()
+        assert lags > 0
+        self.time_series = self.time_series.diff(lags).fillna(0)
+        return self.time_series
+
+    def invert_difference(self, series_with_diff, original_time_series, lags):
+        """
+        Invert a differenced time series according to the lag that was used to difference the data.
+        The inverted time series will be saved as the DataTransaformation object's new time
+        series for future operations.
+        :param series_with_diff: The differenced time series.
+        :param original_time_series: The original time series.
+        :param lags: The difference operator.
+        :return: Inverted time series.
+        """
+        restored = series_with_diff
+        date = series_with_diff.index[0]
+        end_date = series_with_diff.index[-1]
+        days_to_fill = lags
+        # restore the first lags according to original time series
+        while days_to_fill != 0:
+            restored.loc[date] = original_time_series.loc[date]
+            date += timedelta(days=1)
+            days_to_fill -= 1
+        # invert the differenced time series
+        while date <= end_date:
+            restored.loc[date] = series_with_diff.loc[date] + \
+                                 restored.loc[date - timedelta(days=lags)]
+            date += timedelta(days=1)
+        self.time_series = restored
+        return self.time_series
 
     def sqrt(self):
         """
         Transform by taking a square root of all values.
         :return: Time series with applied square root transformation.
         """
-        sqrt_time_series = self.time_series.copy()
-        sqrt_time_series.iloc[:, 0] = np.sqrt(sqrt_time_series.iloc[:, 0])
-        return sqrt_time_series
+        self.time_series.iloc[:, 0] = np.sqrt(self.time_series.iloc[:, 0])
+        return self.time_series
 
     def pow(self):
         """
         Transform by applying power of 2 to all values.
         :return: Time series with applied pow transformation.
         """
-        pow_time_series = self.time_series.copy()
-        pow_time_series.iloc[:, 0] = np.power((pow_time_series.iloc[:, 0]), 2)
-        return pow_time_series
+        self.time_series.iloc[:, 0] = np.power((self.time_series.iloc[:, 0]), 2)
+        return self.time_series
 
     def log(self, increment_val=0):
         """
-        Transform by applying log (base 2) to all values.
+        Transform by applying log (i.e. ln - base e) to all values.
         :param increment_val: Log function can only be applied to numbers higher than zero,
         so if the time series has values <= 0 you should provide the increment val that will be
         added to all values in order for the log function to work properly. Note that the same
         increment_val should be provided when inverting the time series back.
         :return: Time series with applied log transformation.
         """
-        log_time_series = self.time_series.copy()
-        log_time_series += increment_val
-        log_time_series.iloc[:, 0] = np.log2((log_time_series.iloc[:, 0]))
-        return log_time_series
+        self.time_series += increment_val
+        self.time_series.iloc[:, 0] = np.log((self.time_series.iloc[:, 0]))
+        return self.time_series
 
     def exp(self, decrement_val=0):
         """
@@ -61,10 +87,9 @@ class DataTransformation:
         values that might have been <= 0).
         :return: Time series with applied exp transformation.
         """
-        exp_time_series = self.time_series.copy()
-        exp_time_series.iloc[:, 0] = np.exp((exp_time_series.iloc[:, 0]))
-        exp_time_series -= decrement_val
-        return exp_time_series
+        self.time_series.iloc[:, 0] = np.exp((self.time_series.iloc[:, 0]))
+        self.time_series -= decrement_val
+        return self.time_series
 
     def standardization(self):
         """
@@ -73,8 +98,7 @@ class DataTransformation:
         y = (x - mean) / standard_deviation
         :return: Time series with applied standardization.
         """
-        standardized_time_series = self.time_series.copy()
-        values = standardized_time_series.values
+        values = self.time_series.values
         values = values.reshape((len(values), 1))
         # train the standardization
         self.scaler = self.scaler.fit(values)
@@ -82,19 +106,19 @@ class DataTransformation:
         # self.scaler.var_)))
 
         normalized = self.scaler.transform(values)
-        standardized_time_series.iloc[:, 0] = normalized
-        return standardized_time_series
+        self.time_series.iloc[:, 0] = normalized
+        return self.time_series
 
-    def invert_standardization(self, standardized_time_series):
+    def invert_standardization(self):
         """
         Apply the inverse transformation on a standardized time series.
-        :param standardized_time_series
+        The inverted time series will be saved as the DataTransaformation object's new time
+        series for future operations. This should be called on a standardized time series.
         :return: Original time series.
         """
-        inverse_time_series = standardized_time_series.copy()
-        values = inverse_time_series.values
+        values = self.time_series.values
         values = values.reshape((len(values), 1))
         inversed = self.scaler.inverse_transform(values)
-        inverse_time_series.iloc[:, 0] = inversed
-        return inverse_time_series
+        self.time_series.iloc[:, 0] = inversed
+        return self.time_series
 

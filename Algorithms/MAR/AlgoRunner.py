@@ -7,6 +7,7 @@ from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.arima.model import ARIMA
 from datetime import timedelta
 from time import time
+from DataTransformation import DataTransformation
 
 
 class AlgoRunner:
@@ -82,7 +83,7 @@ class AlgoRunner:
         if use_rolling_forecast:
             predictions = self.rolling_forecast(model_order)
         else:
-            model = ARIMA(self.train_data, model_order)
+            model = ARIMA(self.train_data, order=model_order)
             model_fit = self.fit_model(model)
             predictions = self.predict(model_fit)
         self.print_results_and_accuracy(predictions, 'AR', print_plots)
@@ -98,7 +99,7 @@ class AlgoRunner:
         if use_rolling_forecast:
             predictions = self.rolling_forecast(model_order)
         else:
-            model = ARIMA(self.train_data, model_order)
+            model = ARIMA(self.train_data, order=model_order)
             model_fit = self.fit_model(model)
             predictions = self.predict(model_fit)
         self.print_results_and_accuracy(predictions, 'MA', print_plots)
@@ -169,9 +170,9 @@ class AlgoRunner:
         MAPE = mean_absolute_percentage_error(self.test_data, predictions)
         MAE = mean_absolute_error(self.test_data, predictions)
         MSE = mean_squared_error(self.test_data, predictions)
-        print('Mean Absolute percentage error: ', MAPE)
+        print('Mean Absolute Percentage Error: ', MAPE)
         print('Test Data Mean: ', np.mean(self.test_data.iloc[:, 0]))
-        print('Mean Absolute error', MAE)
+        print('Mean Absolute Error', MAE)
         print('Mean Squared Error:', MSE)
         print('Root Mean Squared Error:', np.sqrt(MSE))
 
@@ -183,12 +184,12 @@ class AlgoRunner:
         :param model_orders: The model order parameters (ar_order, diff_order, ma_order).
         :return: The predictions that were generated using the rolling forecast.
         """
-        print(self.test_data)
         prediction_rolling = pd.Series()
         for end_date in self.test_data.index:
             train_data = self.time_series[:end_date - timedelta(days=1)]
             model = ARIMA(train_data, order=model_orders)
             model_fit = model.fit()
-            pred = model_fit.predict(end_date)
-            prediction_rolling.loc[end_date] = pred.loc[end_date]
+            # forecast one day ahead
+            pred = model_fit.forecast(1)
+            prediction_rolling.loc[end_date] = pred
         return prediction_rolling

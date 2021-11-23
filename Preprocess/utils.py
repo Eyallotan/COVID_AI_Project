@@ -8,8 +8,8 @@ make sure we use the same params.
 
 class DataParams:
     def __init__(self):
-        self.start_date = datetime(2021, 1, 17)
-        self.end_date = datetime(2021, 11, 9)
+        self.start_date = datetime(2020, 12, 1)
+        self.end_date = datetime(2021, 4, 1)
         self.number_of_weeks_for_vaccination_stats = 4
         self.number_of_days_for_infected_stats = 14
         self.normalization_factor = 1

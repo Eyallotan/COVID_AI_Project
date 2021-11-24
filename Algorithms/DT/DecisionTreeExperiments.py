@@ -1,24 +1,6 @@
-from datetime import datetime
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
-from Algorithms.DecisionTreeAlgo import DecisionTreeAuxiliaries
-
-
-def get_best_decision_tree_regressor():
-    RF_best_min_samples_leaf = 1
-    RF_best_features = ['City_Code', 'Cumulated_deaths', 'verified_cases_7_days_ago']
-    train_df, test_df = DecisionTreeAuxiliaries.get_train_and_test_df()
-
-    for col in train_df:
-        if col not in RF_best_features and col != 'today_verified_cases':
-            train_df = train_df.drop([col], axis=1)
-
-    X_train, Y_train, X_test, Y_test = DecisionTreeAuxiliaries.get_X_and_Y_tarin_test_sets(train_df, test_df)
-
-    RF_regressor = RandomForestRegressor(n_estimators=10, random_state=1, min_samples_leaf=RF_best_min_samples_leaf)
-    RF_regressor.fit(X_train, Y_train)
-
-    return RF_regressor
+from datetime import datetime
+from Algorithms.DT import DecisionTreePartB
 
 
 def run_decision_tree_on_small_cities(population):
@@ -42,10 +24,10 @@ def run_decision_tree_on_small_cities(population):
     X_test = test_df[[col for col in test_df if col != 'today_verified_cases']].values
     Y_test = test_df['today_verified_cases'].values
 
-    best_regressor = get_best_decision_tree_regressor()
+    best_regressor = DecisionTreePartB.get_best_decision_tree_regressor()
     score = best_regressor.score(X_test, Y_test)
 
-    print(f'desicion_tree_on_cities accuracy: {score}, population={population}')
+    print(f'knn_on_small_cities accuracy: {score}, population={population}')
 
 
 def run_decision_tree_on_small_new_cases(new_cases):
@@ -63,10 +45,10 @@ def run_decision_tree_on_small_new_cases(new_cases):
     X_test = test_df[[col for col in test_df if col != 'today_verified_cases']].values
     Y_test = test_df['today_verified_cases'].values
 
-    best_regressor = get_best_decision_tree_regressor()
+    best_regressor = DecisionTreePartB.get_best_decision_tree_regressor()
     score = best_regressor.score(X_test, Y_test)
 
-    print(f'decision_tree_on_new_cases accuracy: {score}, new_cases {new_cases}')
+    print(f'knn_on_big_new_cases accuracy: {score}, new_cases {new_cases}')
 
 
 def run_decision_tree_on_colour(colour):
@@ -84,10 +66,10 @@ def run_decision_tree_on_colour(colour):
     X_test = test_df[[col for col in test_df if col != 'today_verified_cases']].values
     Y_test = test_df['today_verified_cases'].values
 
-    best_regressor = get_best_decision_tree_regressor()
+    best_regressor = DecisionTreePartB.get_best_decision_tree_regressor()
     score = best_regressor.score(X_test, Y_test)
 
-    print(f'decision_tree_on_colours accuracy: {score}, colour {colour}')
+    print(f'knn_on_big_new_cases accuracy: {score}, colour {colour}')
 
 
 def run_decision_tree_on_dates(start_date, end_date):
@@ -107,7 +89,7 @@ def run_decision_tree_on_dates(start_date, end_date):
     X_test = test_df[[col for col in test_df if col != 'today_verified_cases']].values
     Y_test = test_df['today_verified_cases'].values
 
-    best_regressor = get_best_decision_tree_regressor()
+    best_regressor = DecisionTreePartB.get_best_decision_tree_regressor()
     score = best_regressor.score(X_test, Y_test)
 
     print(f'decision_tree_on_dates accuracy: {score}, start_date {start_date}, end_date {end_date}')
@@ -130,7 +112,7 @@ def run_decision_tree_on_first_veccinated_percentage(min_percentage, max_percent
     X_test = test_df[[col for col in test_df if col != 'today_verified_cases']].values
     Y_test = test_df['today_verified_cases'].values
 
-    best_regressor = get_best_decision_tree_regressor()
+    best_regressor = DecisionTreePartB.get_best_decision_tree_regressor()
     score = best_regressor.score(X_test, Y_test)
 
     print(f'decision_tree_on_first_veccinated_percentage accuracy: {score}, min_percentage {min_percentage}, max_percentage {max_percentage}')
@@ -153,7 +135,7 @@ def run_decision_tree_on_second_veccinated_percentage(min_percentage, max_percen
     X_test = test_df[[col for col in test_df if col != 'today_verified_cases']].values
     Y_test = test_df['today_verified_cases'].values
 
-    best_regressor = get_best_decision_tree_regressor()
+    best_regressor = DecisionTreePartB.get_best_decision_tree_regressor()
     score = best_regressor.score(X_test, Y_test)
 
     print(f'decision_tree_on_second_veccinated_percentage accuracy: {score}, min_percentage {min_percentage}, max_percentage {max_percentage}')

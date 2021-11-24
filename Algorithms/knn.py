@@ -114,6 +114,7 @@ def plot_graphs(k, train, test, weights='uniform'):
     plt.ylabel('daily new cases')
     plt.legend(loc='best', fancybox=True, shadow=True)
     plt.grid(True)
+    plt.title('first 100 examples')
     plt.show()
 
     diff = abs(y_test - y_predicted)
@@ -128,7 +129,7 @@ def plot_graphs(k, train, test, weights='uniform'):
     plt.ylabel('daily new cases')
     plt.legend(loc='best', fancybox=True, shadow=True)
     plt.grid(True)
-    plt.title('100 first examples')
+    plt.title('diff first 100 examples')
     plt.show()
 
     y_no_patients = y_test[y_test == 0]
@@ -141,17 +142,17 @@ def plot_graphs(k, train, test, weights='uniform'):
     plt.ylabel('daily new cases')
     plt.legend(loc='best', fancybox=True, shadow=True)
     plt.grid(True)
-    plt.title('y_true 0')
+    plt.title('y_true equals 0')
     plt.show()
 
     y_spec_patients = y_test[(y_test >= 50) & (y_test <= 200)]
     y_pred_spec_patients = y_predicted[(y_test >= 50) & (y_test <= 200)]
 
-    diff = abs(y_spec_patients - y_pred_spec_patients)
-    plt.errorbar(range(100), y_spec_patients[:100], diff[:100], linestyle='None', marker='^')
-    plt.axhline(y_spec_patients[:100].mean(), color='r', alpha=0.2, linestyle='--')
-    plt.title('errorbar 50 to 200')
-    plt.show()
+    # diff = abs(y_spec_patients - y_pred_spec_patients)
+    # plt.errorbar(range(100), y_spec_patients[:100], diff[:100], linestyle='None', marker='^')
+    # plt.axhline(y_spec_patients[:100].mean(), color='r', alpha=0.2, linestyle='--')
+    # plt.title('errorbar 50 to 200')
+    # plt.show()
 
     plt.plot(y_spec_patients[:100], '.', label="y_true")
     plt.plot(y_pred_spec_patients[:100], '.', label="y_predicted")
@@ -381,10 +382,10 @@ if __name__ == "__main__":
     # model, X_test, y_test = init_model(data)
     train_df = train_df[best_columns]
     test_df = full_test_df[best_columns]
-    # acc = run_knn(6, train_df, test_df)
+    acc = run_knn(6, train_df, test_df)
+    print(f'knn accuracy: {acc}')
     # plot_graphs(6, train_df, test_df)
-    # print(f'knn accuracy: {acc}')
     # experiment_k(train_df)
     # experiment_param(train_df)
     # experiment_features(train_df, cols)
-    experiment_subset_data(6, train_df, test_df, full_test_df, best_columns)
+    # experiment_subset_data(6, train_df, test_df, full_test_df, best_columns)

@@ -4,8 +4,8 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.feature_selection import RFE
 from sklearn.model_selection import KFold
 from sklearn.model_selection import cross_val_score
-from Algorithms.DecisionTreeAlgo import DecisionTreeAuxiliaries
-from Algorithms.DecisionTreeAlgo import DecisionTreePrinting
+from Algorithms.DT import DecisionTreeAuxiliaries
+from Algorithms.DT import DecisionTreePrinting
 
 
 #######################################################################################################################

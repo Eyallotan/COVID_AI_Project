@@ -1,8 +1,8 @@
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import KFold
-from Algorithms.DecisionTreeAlgo import DecisionTreeAuxiliaries
-from Algorithms.DecisionTreeAlgo import DecisionTreePrinting
+from Algorithms.DT import DecisionTreeAuxiliaries
+from Algorithms.DT import DecisionTreePrinting
 
 
 #######################################################################################################################

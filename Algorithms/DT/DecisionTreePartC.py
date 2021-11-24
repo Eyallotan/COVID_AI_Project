@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn import metrics
-from Algorithms.DecisionTreeAlgo import DecisionTreePartB
-from Algorithms.DecisionTreeAlgo import DecisionTreePrinting
+from Algorithms.DT import DecisionTreePartB
+from Algorithms.DT import DecisionTreePrinting
 
 
 font = {'weight' : 'bold',
@@ -59,11 +59,11 @@ def run_experiment(experiment_type, population, colour):
         print(f'City Population SStotal: population <= {population} ===> {metrics.mean_squared_error(Y_test, Avg_Y_test_arr)}')
     if experiment_type == 'Colour':
         print(f'Colour R^2 Score: colour == {colour} ===> {r2_score} ')
+        print(f'Colour MAE Score: colour == {colour} ===> {MAE_score}')
         print(f'Colour SSres: colour == {colour} ===> {metrics.mean_squared_error(Y_test, Y_pred)}')
         print(f'Colour SStotal: colour == {colour} ===> {metrics.mean_squared_error(Y_test, Avg_Y_test_arr)}')
-        print(f'Colour MAE Score: colour == {colour} ===> {MAE_score}')
 
-    return r2_score, metrics.mean_squared_error(Y_test, Y_pred)
+    return r2_score, MAE_score
 
 
 #######################################################################################################################

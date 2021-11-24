@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import cross_val_score
-from Algorithms.DecisionTreeAlgo import DecisionTreeAuxiliaries
+from Algorithms.DT import DecisionTreeAuxiliaries
 
 
 # font = {'weight' : 'bold',
@@ -112,6 +112,7 @@ def print_features_importances(regressor_type):
 
 
 def print_r2_score_vs_MAE_score(experiment_func, experiment_type, score_results):
+    x_ax = 0
     if experiment_type == 'City Population':
         x_ax = [50000, 60000, 70000, 80000, 90000, 100000]
     if experiment_type == 'Colour':

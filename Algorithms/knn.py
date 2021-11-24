@@ -29,6 +29,7 @@ tlv_code = 5000
 haifa_code = 4000
 min = '2021-01-20'
 max = '2021-09-11'
+params = DataParams()
 
 
 def play_knn():
@@ -85,12 +86,12 @@ def preprocess(data):
 def run_knn(k, train, test, weights='uniform'):
     neigh = KNeighborsRegressor(n_neighbors=k, weights=weights)
 
-    y_train = train['today_verified_cases'].values
-    x_train = train.loc[:, train.columns != 'today_verified_cases']
+    y_train = train[params.Y].values
+    x_train = train.loc[:, train.columns != params.Y]
     neigh.fit(x_train.values, y_train)
 
-    y_test = test['today_verified_cases'].values
-    x_test = test.loc[:, test.columns != 'today_verified_cases']
+    y_test = test[params.Y].values
+    x_test = test.loc[:, test.columns != params.Y]
     acc = neigh.score(x_test.values, y_test)
     y_predicted = neigh.predict(x_test.values)
     mse = math.sqrt(mean_squared_error(y_test, y_predicted))
@@ -259,7 +260,7 @@ def run_knn_on_big_cities(population, k, train_df, test_df):
 
 
 def run_knn_on_small_new_cases(new_cases, k, train_df, test_df):
-    test_df = test_df[test_df['today_verified_cases'] <= new_cases]
+    test_df = test_df[test_df[params.Y] <= new_cases]
     knn_output = run_knn(k, train_df, test_df)
     acc = knn_output['acc']
     mse = knn_output['mse']
@@ -268,7 +269,7 @@ def run_knn_on_small_new_cases(new_cases, k, train_df, test_df):
 
 
 def run_knn_on_big_new_cases(new_cases, k, train_df, test_df):
-    test_df = test_df[test_df['today_verified_cases'] >= new_cases]
+    test_df = test_df[test_df[params.Y] >= new_cases]
 
     knn_output = run_knn(k, train_df, test_df)
     acc = knn_output['acc']
@@ -368,22 +369,22 @@ if __name__ == "__main__":
     # play_knn()
     # data = pd.read_csv('train_df.csv')
     # data.sort_values(by=['City_Code', 'Date'], inplace=True)
-    investigate_corona_df()
+    # investigate_corona_df()
 
     train_df = pd.read_csv('../Preprocess/train_df.csv')
     full_test_df = pd.read_csv('../Preprocess/test_df.csv')
 
     best_columns = ['vaccinated_dose_3_total', 'dose_3_in_last_2_week', 'verified_cases_7_days_ago', 'City_Code',
-                    'verified_cases_14_days_ago', 'today_verified_cases', 'colour']  # 'colour' is not realy part of the best columns
+                    'verified_cases_14_days_ago', 'colour'] + [params.Y] # 'colour' is not realy part of the best columns
 
     # data = preprocess(data)
     # model, X_test, y_test = init_model(data)
     train_df = train_df[best_columns]
     test_df = full_test_df[best_columns]
     # acc = run_knn(6, train_df, test_df)
-    plot_graphs(6, train_df, test_df)
+    # plot_graphs(6, train_df, test_df)
     # print(f'knn accuracy: {acc}')
     # experiment_k(train_df)
     # experiment_param(train_df)
     # experiment_features(train_df, cols)
-    # experiment_subset_data(5, train_df, test_df, full_test_df, best_columns)
+    experiment_subset_data(6, train_df, test_df, full_test_df, best_columns)

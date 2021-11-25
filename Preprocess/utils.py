@@ -40,9 +40,9 @@ def preprocess_raw_dataset():
     # read main data frame
     corona_df = pd.read_csv('../Resources/corona_city_table_ver_00155.csv')
     corona_df['Date'] = pd.to_datetime(corona_df['Date'])
-    params = DataParams()
 
-    # reduce to selected dates
+    # reduce to selected dates. These dates may be more than what we use in practice but this
+    # generates extra data for future use if we need it
     start_date = datetime(2020, 8, 31)
     end_date = datetime(2021, 11, 23)
     corona_df = corona_df[(corona_df['Date'] >= start_date) & (corona_df['Date'] <= end_date)]

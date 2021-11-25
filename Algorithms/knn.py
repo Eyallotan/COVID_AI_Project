@@ -165,6 +165,7 @@ def plot_graphs(k, train, test, weights='uniform'):
     plt.title('y_true 50 to 200')
     plt.show()
 
+
 def experiment_features(examples, columns):
     for m in range(5, 15):
         print(f'm={m}')
@@ -172,19 +173,19 @@ def experiment_features(examples, columns):
 
 
 def experiment_m_features(m, examples, columns):
-    kf = KFold(n_splits=5, shuffle=True, random_state=307916502)
-    for i in range(10):
-        test_columns = sample(columns, m) + ['today_verified_cases']
-        experiment_examples = examples[test_columns]
-        sum = 0
-        for train_index, test_index in kf.split(examples):
-            train_examples, test_examples = experiment_examples.iloc[train_index], \
-                                            experiment_examples.iloc[test_index]
-            acc = run_knn(5, train_examples, test_examples)
-            sum += acc
+    examples['Date'] = pd.to_datetime(examples['Date'])
+    for i in range(30):
+        test_columns = sample(columns, m) + [params.Y]
 
-        avg_accuracy = sum / kf.n_splits
-        print(f'accuracy: {avg_accuracy}, columns={test_columns}')
+        split_date = datetime(2021, 7, 23)
+        train_examples = examples[examples['Date'] < split_date][test_columns]
+        test_examples = examples[examples['Date'] >= split_date][test_columns]
+        knn_output = run_knn(5, train_examples, test_examples)
+        acc = knn_output['acc']
+        mse = knn_output['mse']
+        test_mean = knn_output['test_mean']
+
+        print(f'accuracy:{acc}, mse:{mse}, test_mean:{test_mean}, columns={test_columns}')
 
 
 def experiment_k(examples):
@@ -198,7 +199,7 @@ def experiment_k(examples):
             train_examples, test_examples = examples.iloc[train_index], examples.iloc[test_index]
 
             acc = run_knn(k, train_examples, test_examples)
-            sum += acc
+            sum += acc['acc']
         avg_accuracy = sum / kf.n_splits
         accuracies.append(avg_accuracy)
         print(f'K:{k}, average accuracy: {avg_accuracy}')
@@ -311,41 +312,44 @@ def experiment_subset_data(k, train_df, test_df, full_test_df, best_columns):
     run_knn_on_colour(2, k, train_df, test_df)
     run_knn_on_colour(3, k, train_df, test_df)
 
-    start_date = datetime(2021, 1, 20)
-    end_date = datetime(2021, 3, 20)
-    run_knn_on_dates(k, train_df, full_test_df, start_date, end_date, best_columns)
+    # start_date = datetime(2021, 1, 20)
+    # end_date = datetime(2021, 3, 20)
+    # run_knn_on_dates(k, train_df, full_test_df, start_date, end_date, best_columns)
+    #
+    # start_date = datetime(2021, 3, 20)
+    # end_date = datetime(2021, 5, 20)
+    # run_knn_on_dates(k, train_df, full_test_df, start_date, end_date, best_columns)
+    #
+    # start_date = datetime(2021, 5, 20)
+    # end_date = datetime(2021, 7, 20)
+    # run_knn_on_dates(k, train_df, full_test_df, start_date, end_date, best_columns)
+    #
+    # start_date = datetime(2021, 7, 20)
+    # end_date = datetime(2021, 9, 11)
+    # run_knn_on_dates(k, train_df, full_test_df, start_date, end_date, best_columns)
 
-    start_date = datetime(2021, 3, 20)
-    end_date = datetime(2021, 5, 20)
-    run_knn_on_dates(k, train_df, full_test_df, start_date, end_date, best_columns)
 
-    start_date = datetime(2021, 5, 20)
-    end_date = datetime(2021, 7, 20)
-    run_knn_on_dates(k, train_df, full_test_df, start_date, end_date, best_columns)
-
-    start_date = datetime(2021, 7, 20)
-    end_date = datetime(2021, 9, 11)
-    run_knn_on_dates(k, train_df, full_test_df, start_date, end_date, best_columns)
-
-
-def investigate_corona_df():
-    corona_df = pd.read_csv('../Preprocess/corona_df.csv')
-    plt.plot(corona_df[corona_df['City_Code'] == 5000]['Date'].values, corona_df[corona_df['City_Code'] == 5000]['today_verified_cases'].values, label="y_true")
+def investigate_corona_df(corona_df):
+    plt.plot(corona_df[corona_df['City_Code'] == 5000]['Date'].values, corona_df[corona_df['City_Code'] == 5000]['today_verified_cases'].values, label="TLV")
+    plt.plot(corona_df[corona_df['City_Code'] == 4000]['Date'].values, corona_df[corona_df['City_Code'] == 4000]['today_verified_cases'].values, label="HAIFA")
+    plt.plot(corona_df[corona_df['City_Code'] == 6100]['Date'].values, corona_df[corona_df['City_Code'] == 6100]['today_verified_cases'].values, label="BNEI BRAK")
     plt.axhline(corona_df[corona_df['City_Code'] == 5000]['today_verified_cases'].values.mean(), color='r', alpha=0.2, linestyle='--')
     plt.axhline(corona_df[corona_df['City_Code'] == 5000]['today_verified_cases'].values.std(), color='b', alpha=0.2, linestyle='--')
     plt.xlabel('#Sample')
     plt.ylabel('daily new cases')
     plt.legend(loc='best', fancybox=True, shadow=True)
     plt.grid(True)
-    plt.title('israel new cases')
+    plt.title('New Cases')
     plt.show()
 
-    plt.plot(corona_df[corona_df['City_Code'] == 5000]['Date'].values, corona_df[corona_df['City_Code'] == 5000]['today_verified_cases_smoothed'].values, label="y_true")
+    plt.plot(corona_df[corona_df['City_Code'] == 5000]['Date'].values, corona_df[corona_df['City_Code'] == 5000]['today_verified_cases_smoothed'].values, label="TLV")
+    plt.plot(corona_df[corona_df['City_Code'] == 4000]['Date'].values, corona_df[corona_df['City_Code'] == 4000]['today_verified_cases_smoothed'].values, label="HAIFA")
+    plt.plot(corona_df[corona_df['City_Code'] == 6100]['Date'].values, corona_df[corona_df['City_Code'] == 6100]['today_verified_cases_smoothed'].values, label="BNEI BRAK")
     plt.xlabel('#Sample')
     plt.ylabel('daily new cases')
     plt.legend(loc='best', fancybox=True, shadow=True)
     plt.grid(True)
-    plt.title('israel new cases')
+    plt.title('New Cases smooth')
     plt.show()
 
     params = DataParams()
@@ -363,29 +367,37 @@ def investigate_corona_df():
     train_df, test_df = train_test_split(corona_df, test_size=params.split_test_size, random_state=params.split_random_state)
     knn_output = run_knn(6, train_df, test_df)
     print(f'with normalization: {knn_output}')
-    exit(0)
 
 
 if __name__ == "__main__":
     # play_knn()
     # data = pd.read_csv('train_df.csv')
     # data.sort_values(by=['City_Code', 'Date'], inplace=True)
-    # investigate_corona_df()
+    corona_df = pd.read_csv('../Preprocess/corona_df.csv')
+    # investigate_corona_df(corona_df)
 
     train_df = pd.read_csv('../Preprocess/train_df.csv')
     full_test_df = pd.read_csv('../Preprocess/test_df.csv')
+    # investigate_corona_df(train_df)
+    # investigate_corona_df(full_test_df)
 
     best_columns = ['vaccinated_dose_3_total', 'dose_3_in_last_2_week', 'verified_cases_7_days_ago', 'City_Code',
                     'verified_cases_14_days_ago', 'colour'] + [params.Y] # 'colour' is not realy part of the best columns
+
+    # best_columns = ['Cumulative_verified_cases', 'verified_cases_14_days_ago', 'final_score',
+    #                 'verified_cases_8_days_ago', 'dose_1_in_last_2_week', 'Cumulated_deaths',
+    #                 'verified_cases_9_days_ago', 'verified_cases_3_days_ago', 'dose_3_in_last_2_week',
+    #                 'verified_cases_13_days_ago', 'City_Code', 'verified_cases_10_days_ago'] + [params.Y]
 
     # data = preprocess(data)
     # model, X_test, y_test = init_model(data)
     train_df = train_df[best_columns]
     test_df = full_test_df[best_columns]
-    acc = run_knn(6, train_df, test_df)
-    print(f'knn accuracy: {acc}')
+    # acc = run_knn(6, train_df, test_df)
+    # print(f'knn accuracy: {acc}')
+    # exit(0)
     # plot_graphs(6, train_df, test_df)
     # experiment_k(train_df)
     # experiment_param(train_df)
     # experiment_features(train_df, cols)
-    # experiment_subset_data(6, train_df, test_df, full_test_df, best_columns)
+    experiment_subset_data(6, train_df, test_df, full_test_df, best_columns)

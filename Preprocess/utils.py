@@ -42,9 +42,9 @@ def preprocess_raw_dataset():
     corona_df['Date'] = pd.to_datetime(corona_df['Date'])
     params = DataParams()
 
-    # reduce to the dates set by DataParams
-    start_date = params.start_date
-    end_date = params.end_date
+    # reduce to selected dates
+    start_date = datetime(2020, 8, 31)
+    end_date = datetime(2021, 11, 23)
     corona_df = corona_df[(corona_df['Date'] >= start_date) & (corona_df['Date'] <= end_date)]
 
     city_codes = list(dict.fromkeys(corona_df['City_Code'].values))

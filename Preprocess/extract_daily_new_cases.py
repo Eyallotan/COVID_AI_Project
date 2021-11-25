@@ -41,10 +41,10 @@ def generate_daily_new_cases_df():
     cities_df['today_verified_cases_smoothed'] = cities_df['today_verified_cases'].rolling(window=7).mean()
 
     # set start and end date (see the constraints for start date in the file prolog)
-    # start_date = params.start_date
-    # end_date = params.end_date
-    # result_df = cities_df[(cities_df['Date'] >= start_date) & (cities_df['Date'] <= end_date)][result_columns]
-    return cities_df
+    start_date = params.start_date
+    end_date = params.end_date
+    result_df = cities_df[(cities_df['Date'] >= start_date) & (cities_df['Date'] <= end_date)][result_columns]
+    return result_df
 
 
 '''

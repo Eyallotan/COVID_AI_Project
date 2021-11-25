@@ -30,8 +30,8 @@ def generate_vaccination_columns():
     params = DataParams()
 
     # choose date ranges (see file prolog for more details)
-    # vaccinated_df = vaccinated_df[(vaccinated_df['Date'] >= params.start_date) &
-    #                               (vaccinated_df['Date'] <= params.end_date)]
+    vaccinated_df = vaccinated_df[(vaccinated_df['Date'] >= params.start_date) &
+                                  (vaccinated_df['Date'] <= params.end_date)]
 
     # get rid of fields containing a "<15" value and replace them with 0
     for column in vaccinated_df.filter(regex="dose_.*"):

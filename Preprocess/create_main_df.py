@@ -1,7 +1,4 @@
 import pandas as pd
-from datetime import datetime, timedelta
-from sklearn.model_selection import train_test_split
-import math
 from Preprocess import utils
 from Preprocess import extract_daily_new_cases
 from Preprocess import extract_vaccination_stats

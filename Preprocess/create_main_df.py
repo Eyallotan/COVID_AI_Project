@@ -1,7 +1,7 @@
 import pandas as pd
 from datetime import datetime, timedelta
 from sklearn.model_selection import train_test_split
-
+import math
 from Preprocess import utils
 from Preprocess import extract_daily_new_cases
 from Preprocess import extract_vaccination_stats
@@ -18,20 +18,10 @@ assure that the join works correctly.
 '''
 
 if __name__ == "__main__":
-    # read main data frame
-    corona_df = pd.read_csv('../Resources/corona_city_table_ver_00134.csv')
+    # read main data frame (we assume it exists - if not, run utils.py to create it)
+    corona_df = pd.read_csv('corona_city_table_preprocessed.csv')
     corona_df['Date'] = pd.to_datetime(corona_df['Date'])
     params = utils.DataParams()
-
-    # get rid of fields containing a "<15" value and replace them with 0
-    for column in corona_df.filter(regex="Cumulative_.*|Cumulated_.*"):
-        corona_df[column].replace({"<15": 0}, inplace=True)
-        corona_df[column] = pd.to_numeric(corona_df[column])
-
-    # reduce to the dates set by DataParams
-    start_date = params.start_date
-    end_date = params.end_date
-    corona_df = corona_df[(corona_df['Date'] >= start_date) & (corona_df['Date'] <= end_date)]
 
     # get external columns
     vaccination_df = extract_vaccination_stats.generate_vaccination_columns()
@@ -40,19 +30,22 @@ if __name__ == "__main__":
     # join all data frames together. The key for the join op is [City_Name,City_Code,Date]
     temp_df = pd.merge(corona_df, vaccination_df, how="inner", on=["City_Name", "City_Code",
                                                                    "Date"])
-    result_df = pd.merge(temp_df, daily_new_cases_df, how="inner", on=["City_Name", "City_Code",
+    merged_df = pd.merge(temp_df, daily_new_cases_df, how="inner", on=["City_Name", "City_Code",
                                                                        "Date"])
 
-    result_df = normalize_df.normalize_data_set(result_df)
+    # reduce to the dates set by DataParams
+    start_date = params.start_date
+    end_date = params.end_date
+    corona_df = merged_df[(merged_df['Date'] >= start_date) & (merged_df['Date'] <= end_date)]
+
+    result_df = normalize_df.normalize_data_set(corona_df)
 
     # generate the output df
     utils.generate_output_csv(result_df, 'corona_df')
 
-    # train_df, test_df = train_test_split(result_df, test_size=params.split_test_size, random_state=params.split_random_state)
-    split_date = datetime(2021, 7, 1)
-
-    train_df = result_df[result_df['Date'] < split_date]
-    test_df = result_df[result_df['Date'] >= split_date + timedelta(days=10)]
+    # generate train and test set according to the split date
+    train_df = result_df[result_df['Date'] < params.split_date]
+    test_df = result_df[result_df['Date'] >= params.split_date + timedelta(days=10)]
 
     utils.generate_output_csv(train_df, 'train_df')
     utils.generate_output_csv(test_df, 'test_df')

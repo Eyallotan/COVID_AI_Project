@@ -25,13 +25,17 @@ for now, in case we want to use it later).
 
 def generate_vaccination_columns():
     # read csv file
-    vaccinated_df = pd.read_csv('../Resources/vaccinated_city_table_ver_00156.csv')
+    vaccinated_df = pd.read_csv('../Resources/vaccinated_city_table_ver_00302.csv')
     vaccinated_df['Date'] = pd.to_datetime(vaccinated_df['Date'])
     params = DataParams()
 
+    # choose date ranges (see file prolog for more details)
+    # vaccinated_df = vaccinated_df[(vaccinated_df['Date'] >= params.start_date) &
+    #                               (vaccinated_df['Date'] <= params.end_date)]
+
     # get rid of fields containing a "<15" value and replace them with 0
     for column in vaccinated_df.filter(regex="dose_.*"):
-        vaccinated_df[column].replace({"<15": 0}, inplace=True)
+        vaccinated_df[column].replace({"<15": 1}, inplace=True)
         vaccinated_df[column] = pd.to_numeric(vaccinated_df[column])
 
     # the df contains vaccination stats by age. We want the total number of vaccinated so we sum
@@ -66,10 +70,6 @@ def generate_vaccination_columns():
                     window=week_number*7).sum()
                 # concat result to the main data frame
     '''
-
-    # choose date ranges (see file prolog for more details)
-    vaccinated_df = vaccinated_df[(vaccinated_df['Date'] >= params.start_date) &
-                                  (vaccinated_df['Date'] <= params.end_date)]
 
     # rename first two columns. Since they are used as keys later on when we merge the data frames
     # together, they need to have identical names.

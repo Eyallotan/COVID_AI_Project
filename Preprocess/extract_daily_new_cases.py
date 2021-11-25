@@ -18,17 +18,9 @@ def before_date():
 
 
 def generate_daily_new_cases_df():
-    cities_df = pd.read_csv('../Resources/corona_city_table_ver_00134.csv')
-    int_columns = ['Cumulative_verified_cases', 'Cumulated_recovered', 'Cumulated_deaths', 'Cumulated_number_of_tests',
-                   'Cumulated_number_of_diagnostic_tests']
-    params = DataParams()
-
+    cities_df = pd.read_csv('corona_city_table_preprocessed.csv')
     cities_df['Date'] = pd.to_datetime(cities_df['Date'])
-
-    # Convert all int columns to int type (need to remove this <15 value from them)
-    for column_name in int_columns:
-        cities_df[column_name] = cities_df[column_name].replace('<15', 0)
-        cities_df[column_name] = pd.to_numeric(cities_df[column_name])
+    params = DataParams()
 
     # Generate N columns of previous days new cases
     N = params.number_of_days_for_infected_stats
@@ -49,10 +41,10 @@ def generate_daily_new_cases_df():
     cities_df['today_verified_cases_smoothed'] = cities_df['today_verified_cases'].rolling(window=7).mean()
 
     # set start and end date (see the constraints for start date in the file prolog)
-    start_date = params.start_date
-    end_date = params.end_date
-    result_df = cities_df[(cities_df['Date'] >= start_date) & (cities_df['Date'] <= end_date)][result_columns]
-    return result_df
+    # start_date = params.start_date
+    # end_date = params.end_date
+    # result_df = cities_df[(cities_df['Date'] >= start_date) & (cities_df['Date'] <= end_date)][result_columns]
+    return cities_df
 
 
 '''

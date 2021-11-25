@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
     # generate train and test set according to the split date
     train_df = result_df[result_df['Date'] < params.split_date]
-    test_df = result_df[result_df['Date'] >= params.split_date + timedelta(days=10)]
+    test_df = result_df[result_df['Date'] >= params.split_date]
 
     utils.generate_output_csv(train_df, 'train_df')
     utils.generate_output_csv(test_df, 'test_df')

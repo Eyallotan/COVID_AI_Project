@@ -1,4 +1,5 @@
 import pandas as pd
+from datetime import datetime, timedelta
 from sklearn.model_selection import train_test_split
 import math
 from Preprocess import utils
@@ -42,6 +43,9 @@ if __name__ == "__main__":
     # generate the output df
     utils.generate_output_csv(result_df, 'corona_df')
 
-    train_df, test_df = train_test_split(result_df, test_size=params.split_test_size, random_state=params.split_random_state)
+    # generate train and test set according to the split date
+    train_df = result_df[result_df['Date'] < params.split_date]
+    test_df = result_df[result_df['Date'] >= params.split_date + timedelta(days=10)]
+
     utils.generate_output_csv(train_df, 'train_df')
     utils.generate_output_csv(test_df, 'test_df')

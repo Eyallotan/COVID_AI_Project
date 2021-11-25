@@ -34,9 +34,11 @@ def generate_daily_new_cases_df():
 
     cities_df.rename(columns={'verified_cases_0_days_ago': 'today_verified_cases'}, inplace=True)
 
-    result_columns = ['City_Name', 'City_Code', 'Date', 'today_verified_cases']
+    result_columns = ['City_Name', 'City_Code', 'Date', 'today_verified_cases', 'today_verified_cases_smoothed']
     for i in range(2, N + 2):
         result_columns.append(f'verified_cases_{i - 1}_days_ago')
+
+    cities_df['today_verified_cases_smoothed'] = cities_df['today_verified_cases'].rolling(window=7).mean()
 
     # set start and end date (see the constraints for start date in the file prolog)
     start_date = params.start_date

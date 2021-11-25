@@ -12,11 +12,14 @@ class DataParams:
     def __init__(self):
         self.start_date = datetime(2021, 1, 5)
         self.end_date = datetime(2021, 11, 23)
+        self.split_date = datetime(2021, 7, 1)
         self.number_of_weeks_for_vaccination_stats = 2
         self.number_of_days_for_infected_stats = 14
         self.normalization_factor = 1
-        self.not_normalized_columns = ['City_Name', 'City_Code', 'Date', 'colour', 'final_score', 'today_verified_cases']
+        self.not_normalized_columns = ['City_Name', 'City_Code', 'Date', 'colour', 'final_score',
+                                       'today_verified_cases', 'today_verified_cases_smoothed']
         self.Y = 'today_verified_cases'
+        # self.Y = 'today_verified_cases_smoothed'
         self.split_test_size = 0.2
         self.split_random_state = 1
 

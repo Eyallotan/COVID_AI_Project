@@ -30,13 +30,13 @@ if __name__ == "__main__":
     # join all data frames together. The key for the join op is [City_Name,City_Code,Date]
     temp_df = pd.merge(corona_df, vaccination_df, how="inner", on=["City_Name", "City_Code",
                                                                    "Date"])
-    result_df = pd.merge(temp_df, daily_new_cases_df, how="inner", on=["City_Name", "City_Code",
+    merged_df = pd.merge(temp_df, daily_new_cases_df, how="inner", on=["City_Name", "City_Code",
                                                                        "Date"])
 
     # reduce to the dates set by DataParams
     start_date = params.start_date
     end_date = params.end_date
-    corona_df = corona_df[(corona_df['Date'] >= start_date) & (corona_df['Date'] <= end_date)]
+    corona_df = merged_df[(merged_df['Date'] >= start_date) & (merged_df['Date'] <= end_date)]
 
     result_df = normalize_df.normalize_data_set(corona_df)
 

@@ -1,6 +1,6 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
-
+import math
 from Preprocess import utils
 from Preprocess import extract_daily_new_cases
 from Preprocess import extract_vaccination_stats
@@ -17,15 +17,10 @@ assure that the join works correctly.
 '''
 
 if __name__ == "__main__":
-    # read main data frame
-    corona_df = pd.read_csv('../Resources/corona_city_table_ver_00134.csv')
+    # read main data frame (we assume it exists - if not, run utils.py to create it)
+    corona_df = pd.read_csv('corona_city_table_preprocessed.csv')
     corona_df['Date'] = pd.to_datetime(corona_df['Date'])
     params = utils.DataParams()
-
-    # get rid of fields containing a "<15" value and replace them with 0
-    for column in corona_df.filter(regex="Cumulative_.*|Cumulated_.*"):
-        corona_df[column].replace({"<15": 0}, inplace=True)
-        corona_df[column] = pd.to_numeric(corona_df[column])
 
     # reduce to the dates set by DataParams
     start_date = params.start_date

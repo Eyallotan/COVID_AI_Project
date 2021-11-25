@@ -23,11 +23,6 @@ if __name__ == "__main__":
     corona_df['Date'] = pd.to_datetime(corona_df['Date'])
     params = utils.DataParams()
 
-    # reduce to the dates set by DataParams
-    start_date = params.start_date
-    end_date = params.end_date
-    corona_df = corona_df[(corona_df['Date'] >= start_date) & (corona_df['Date'] <= end_date)]
-
     # get external columns
     vaccination_df = extract_vaccination_stats.generate_vaccination_columns()
     daily_new_cases_df = extract_daily_new_cases.generate_daily_new_cases_df()
@@ -38,7 +33,12 @@ if __name__ == "__main__":
     result_df = pd.merge(temp_df, daily_new_cases_df, how="inner", on=["City_Name", "City_Code",
                                                                        "Date"])
 
-    result_df = normalize_df.normalize_data_set(result_df)
+    # reduce to the dates set by DataParams
+    start_date = params.start_date
+    end_date = params.end_date
+    corona_df = corona_df[(corona_df['Date'] >= start_date) & (corona_df['Date'] <= end_date)]
+
+    result_df = normalize_df.normalize_data_set(corona_df)
 
     # generate the output df
     utils.generate_output_csv(result_df, 'corona_df')

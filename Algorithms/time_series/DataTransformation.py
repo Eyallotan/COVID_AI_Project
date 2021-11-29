@@ -38,8 +38,12 @@ class DataTransformation:
         end_date = series_with_diff.index[-1]
         days_to_fill = lags
         # restore the first lags according to original time series
-        while days_to_fill != 0:
-            restored.loc[date] = original_time_series.loc[date]
+        while days_to_fill != 0 and date <= end_date:
+            if date > original_time_series.index[0]:
+                restored.loc[date] = series_with_diff.loc[date] + \
+                                     original_time_series.loc[date - timedelta(days=lags)].to_numpy()
+            else:
+                restored.loc[date] = original_time_series.loc[date].to_numpy()
             date += timedelta(days=1)
             days_to_fill -= 1
         # invert the differenced time series

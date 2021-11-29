@@ -7,6 +7,7 @@ from sklearn.neighbors import KNeighborsRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold
 from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import TimeSeriesSplit
 import math
 
 from Preprocess.utils import DataParams
@@ -82,6 +83,17 @@ def preprocess(data):
     data = data[base_columns + daily_new_cases_columns + vaccination_columns]
     return data
 
+def run_knn_with_split(k, examples, weights='uniform'):
+    tscv = TimeSeriesSplit()
+    sum = 0
+    for train_index, test_index in tscv.split(examples):
+        train_examples, test_examples = examples.iloc[train_index], examples.iloc[test_index]
+        acc = run_knn(k, train_examples, test_examples, weights=weights)
+        sum += acc['acc']
+        print(f'accuracy: {acc}')
+
+    avg_accuracy = sum / tscv.n_splits
+    print(f'avg accuracy: {avg_accuracy}')
 
 def run_knn(k, train, test, weights='uniform'):
     neigh = KNeighborsRegressor(n_neighbors=k, weights=weights)
@@ -96,10 +108,10 @@ def run_knn(k, train, test, weights='uniform'):
     y_predicted = neigh.predict(x_test.values)
     mse = math.sqrt(mean_squared_error(y_test, y_predicted))
 
-    my_acc = 1 - ((y_test - y_predicted)** 2).sum() / ((y_test - y_test.mean()) ** 2).sum()
+    # my_acc = 1 - ((y_test - y_predicted)** 2).sum() / ((y_test - y_test.mean()) ** 2).sum()
 
-    return {'acc': acc, 'mse': mse, 'test_mean': y_test.mean(), 'my_acc': my_acc,
-            'y_test': y_test, 'y_predicted': y_predicted}
+    return {'acc': acc, 'mse': mse, 'test_mean': y_test.mean()}  #, 'my_acc': my_acc,
+            # 'y_test': y_test, 'y_predicted': y_predicted}
 
 
 def plot_graphs(k, train, test, weights='uniform'):
@@ -378,6 +390,15 @@ if __name__ == "__main__":
 
     train_df = pd.read_csv('../Preprocess/train_df.csv')
     full_test_df = pd.read_csv('../Preprocess/test_df.csv')
+
+    corona_df['Date'] = pd.to_datetime(corona_df['Date'])
+    train_df['Date'] = pd.to_datetime(train_df['Date'])
+    full_test_df['Date'] = pd.to_datetime(full_test_df['Date'])
+
+    corona_df.sort_values(by=['Date'], inplace=True)
+    train_df.sort_values(by=['Date'], inplace=True)
+    full_test_df.sort_values(by=['Date'], inplace=True)
+
     # investigate_corona_df(train_df)
     # investigate_corona_df(full_test_df)
 
@@ -393,9 +414,11 @@ if __name__ == "__main__":
     # model, X_test, y_test = init_model(data)
     train_df = train_df[best_columns]
     test_df = full_test_df[best_columns]
-    # acc = run_knn(6, train_df, test_df)
-    # print(f'knn accuracy: {acc}')
-    # exit(0)
+    corona_df = corona_df[best_columns]
+    run_knn_with_split(6, corona_df)
+    acc = run_knn(6, train_df, test_df)
+    print(f'knn accuracy: {acc}')
+    exit(0)
     # plot_graphs(6, train_df, test_df)
     # experiment_k(train_df)
     # experiment_param(train_df)

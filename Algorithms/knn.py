@@ -1,17 +1,18 @@
 from random import sample
 from datetime import datetime
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error, mean_absolute_error
 from sklearn.model_selection import TimeSeriesSplit
 import math
 
 from Preprocess.utils import DataParams
 
+K=6
+params = DataParams()
 cols = ['City_Code','Cumulative_verified_cases',
         'Cumulated_recovered','Cumulated_deaths','Cumulated_number_of_tests',
         'Cumulated_number_of_diagnostic_tests','colour','final_score',
@@ -26,11 +27,14 @@ cols = ['City_Code','Cumulative_verified_cases',
         'verified_cases_9_days_ago','verified_cases_10_days_ago',
         'verified_cases_11_days_ago','verified_cases_12_days_ago','verified_cases_13_days_ago',
         'verified_cases_14_days_ago'] # 'Date','today_verified_cases','City_Name',
+
+best_columns = ['vaccinated_dose_3_total', 'dose_3_in_last_2_week', 'verified_cases_7_days_ago', 'City_Code',
+                'verified_cases_14_days_ago', 'colour'] + [params.Y]
+
 tlv_code = 5000
 haifa_code = 4000
 min = '2021-01-20'
 max = '2021-09-11'
-params = DataParams()
 
 
 def play_knn():
@@ -58,41 +62,19 @@ def play_knn():
     print(y_pred)
 
 
-def preprocess(data):
-    params = DataParams()
-    base_columns = ['City_Code', params.Y]
-    N = params.number_of_days_for_infected_stats
-    daily_new_cases_columns = []
-    vaccination_columns = []#['vaccinated_dose_1_total', 'vaccinated_dose_2_total', 'dose_1_in_last_1_week', 'dose_1_in_last_2_week', 'dose_2_in_last_3_week']  # TODO: use them later
-    # for i in range(2, N + 2):
-    for i in range(2, 7):
-        daily_new_cases_columns.append(f'verified_cases_{i - 1}_days_ago')
-    # prod_cols = ['colour','final_score',
-    #              'vaccinated_dose_1_total','vaccinated_dose_2_total','vaccinated_dose_3_total',
-    #              'dose_1_in_last_1_week','dose_1_in_last_2_week','dose_1_in_last_3_week',
-    #              'dose_1_in_last_4_week','dose_2_in_last_1_week','dose_2_in_last_2_week',
-    #              'dose_2_in_last_3_week','dose_2_in_last_4_week','dose_3_in_last_1_week',
-    #              'dose_3_in_last_2_week','dose_3_in_last_3_week','dose_3_in_last_4_week',
-    #              'verified_cases_1_days_ago','verified_cases_2_days_ago',
-    #              'verified_cases_3_days_ago','verified_cases_4_days_ago','verified_cases_5_days_ago',
-    #              'verified_cases_6_days_ago','verified_cases_7_days_ago','verified_cases_8_days_ago',
-    #              'verified_cases_9_days_ago','verified_cases_10_days_ago',
-    #              'verified_cases_11_days_ago','verified_cases_12_days_ago','verified_cases_13_days_ago',
-    #              'verified_cases_14_days_ago']
-    # data = data[base_columns + prod_cols]  #+ daily_new_cases_columns + vaccination_columns]
-    data = data[base_columns + daily_new_cases_columns + vaccination_columns]
-    return data
-
 def run_knn_with_split(k, examples, weights='uniform'):
-    tscv = TimeSeriesSplit()
+    tscv = TimeSeriesSplit(n_splits=20)
     sum = 0
+    divider = 0
     for train_index, test_index in tscv.split(examples):
         train_examples, test_examples = examples.iloc[train_index], examples.iloc[test_index]
         acc = run_knn(k, train_examples, test_examples, weights=weights)
-        sum += acc['acc']
+        if acc['acc'] > 0:
+            sum += acc['acc']
+            divider = divider + 1
         print(f'accuracy: {acc}')
 
-    avg_accuracy = sum / tscv.n_splits
+    avg_accuracy = sum / divider # tscv.n_splits
     print(f'avg accuracy: {avg_accuracy}')
 
 def run_knn(k, train, test, weights='uniform'):
@@ -107,11 +89,12 @@ def run_knn(k, train, test, weights='uniform'):
     acc = neigh.score(x_test.values, y_test)
     y_predicted = neigh.predict(x_test.values)
     mse = math.sqrt(mean_squared_error(y_test, y_predicted))
+    mae = mean_absolute_error(y_test, y_predicted)
+    mape = mean_absolute_percentage_error(y_test, y_predicted)
 
     # my_acc = 1 - ((y_test - y_predicted)** 2).sum() / ((y_test - y_test.mean()) ** 2).sum()
 
-    return {'acc': acc, 'mse': mse, 'test_mean': y_test.mean()}  #, 'my_acc': my_acc,
-            # 'y_test': y_test, 'y_predicted': y_predicted}
+    return {'acc': acc, 'mae': mae, 'test_mean': y_test.mean()} # , 'y_test': y_test, 'y_predicted': y_predicted, 'mse': None
 
 
 def plot_graphs(k, train, test, weights='uniform'):
@@ -200,8 +183,8 @@ def experiment_m_features(m, examples, columns):
         print(f'accuracy:{acc}, mse:{mse}, test_mean:{test_mean}, columns={test_columns}')
 
 
-def experiment_k(examples):
-    kf = KFold(n_splits=5, shuffle=True, random_state=307916502)
+def experiment_k_kfold(examples):
+    kf = KFold(n_splits=5)#, shuffle=True, random_state=307916502)
     K = range(3, 25)
     accuracies = []
     for k in K:
@@ -222,23 +205,27 @@ def experiment_k(examples):
     plt.show()
 
 
-def experiment_param(examples):
-    kf = KFold(n_splits=5, shuffle=True, random_state=307916502)
+def experiment_k(train, test):
+    train = train[best_columns]
+    test = test[best_columns]
+    K = range(3, 25)
+    accuracies = []
+    for k in K:
+        knn_output = run_knn(k, train, test)
+        accuracies.append(knn_output['acc'])
 
-    uniform_acc_sum = 0
-    distance_acc_sum = 0
-    for train_index, test_index in kf.split(examples):
-        train_examples, test_examples = examples.iloc[train_index], examples.iloc[test_index]
+    plt.plot(K, accuracies)
+    plt.xlabel('K')
+    plt.ylabel('accuracy')
+    plt.show()
 
-        uniform_acc = run_knn(6, train_examples, test_examples, 'uniform')
-        distance_acc = run_knn(6, train_examples, test_examples, 'distance')
-        # print(f'uniform_accuracy: {uniform_acc}, distance_accuracy: {distance_acc}')
-        uniform_acc_sum += uniform_acc
-        distance_acc_sum += distance_acc
 
-    avg_uniform_accuracy = uniform_acc_sum / kf.n_splits
-    avg_distance_accuracy = distance_acc_sum / kf.n_splits
-    print(f'uniform_accuracy: {avg_uniform_accuracy}, distance_accuracy: {avg_distance_accuracy}')
+def experiment_weights(train, test):
+    print('testing best weights')
+    print('uniform:')
+    run_knn_best_columns(K, train, test, 'uniform')
+    print('distance:')
+    run_knn_best_columns(K, train, test, 'distance')
 
 
 def run_knn_on_small_cities(population, k, train_df, test_df):
@@ -252,9 +239,9 @@ def run_knn_on_small_cities(population, k, train_df, test_df):
 
     knn_output = run_knn(k, train_df, test_df)
     acc = knn_output['acc']
-    mse = knn_output['mse']
+    mae = knn_output['mae']
     test_mean = knn_output['test_mean']
-    print(f'knn_on_small_cities accuracy: {acc}, mse: {mse}, y_test_mean={test_mean}, population={population}')
+    print(f'knn_on_small_cities accuracy: {acc}, mae: {mae}, y_test_mean={test_mean}, population={population}')
 
 
 def run_knn_on_big_cities(population, k, train_df, test_df):
@@ -268,18 +255,18 @@ def run_knn_on_big_cities(population, k, train_df, test_df):
 
     knn_output = run_knn(k, train_df, test_df)
     acc = knn_output['acc']
-    mse = knn_output['mse']
+    mae = knn_output['mae']
     test_mean = knn_output['test_mean']
-    print(f'knn_on_big_cities accuracy: {acc}, mse: {mse}, y_test_mean={test_mean}, population={population}')
+    print(f'knn_on_big_cities accuracy: {acc}, mae: {mae}, y_test_mean={test_mean}, population={population}')
 
 
 def run_knn_on_small_new_cases(new_cases, k, train_df, test_df):
     test_df = test_df[test_df[params.Y] <= new_cases]
     knn_output = run_knn(k, train_df, test_df)
     acc = knn_output['acc']
-    mse = knn_output['mse']
+    mae = knn_output['mae']
     test_mean = knn_output['test_mean']
-    print(f'knn_on_small_new_cases accuracy: {acc}, mse: {mse}, y_test_mean={test_mean}, new_cases {new_cases}')
+    print(f'knn_on_small_new_cases accuracy: {acc}, mae: {mae}, y_test_mean={test_mean}, new_cases {new_cases}')
 
 
 def run_knn_on_big_new_cases(new_cases, k, train_df, test_df):
@@ -287,9 +274,9 @@ def run_knn_on_big_new_cases(new_cases, k, train_df, test_df):
 
     knn_output = run_knn(k, train_df, test_df)
     acc = knn_output['acc']
-    mse = knn_output['mse']
+    mae = knn_output['mae']
     test_mean = knn_output['test_mean']
-    print(f'knn_on_big_new_cases accuracy: {acc}, mse: {mse}, y_test_mean={test_mean}, new_cases {new_cases}')
+    print(f'knn_on_big_new_cases accuracy: {acc}, mae: {mae}, y_test_mean={test_mean}, new_cases {new_cases}')
 
 
 def run_knn_on_colour(colour, k, train_df, test_df):
@@ -297,9 +284,9 @@ def run_knn_on_colour(colour, k, train_df, test_df):
 
     knn_output = run_knn(k, train_df, test_df)
     acc = knn_output['acc']
-    mse = knn_output['mse']
+    mae = knn_output['mae']
     test_mean = knn_output['test_mean']
-    print(f'knn_on_colour accuracy: {acc}, mse: {mse}, y_test_mean={test_mean}, colour {colour}')
+    print(f'knn_on_colour accuracy: {acc}, mae: {mae}, y_test_mean={test_mean}, colour {colour}')
 
 
 def run_knn_on_dates(k, train_df, test_df, start_date, end_date, best_columns):
@@ -308,10 +295,10 @@ def run_knn_on_dates(k, train_df, test_df, start_date, end_date, best_columns):
     test_df = test_df[best_columns]
     knn_output = run_knn(k, train_df, test_df)
     acc = knn_output['acc']
-    mse = knn_output['mse']
+    mae = knn_output['mae']
     test_mean = knn_output['test_mean']
     my_acc = knn_output['my_acc']
-    print(f'knn_on_big_new_cases accuracy: {acc}, mse: {mse}, y_test_mean={test_mean}, my_acc={my_acc}, start_date {start_date}, , end_date {end_date}')
+    print(f'knn_on_big_new_cases accuracy: {acc}, mae: {mae}, y_test_mean={test_mean}, my_acc={my_acc}, start_date {start_date}, , end_date {end_date}')
 
 
 def experiment_subset_data(k, train_df, test_df, full_test_df, best_columns):
@@ -341,13 +328,15 @@ def experiment_subset_data(k, train_df, test_df, full_test_df, best_columns):
     # run_knn_on_dates(k, train_df, full_test_df, start_date, end_date, best_columns)
 
 
-def investigate_corona_df(corona_df):
+def investigate_corona_df(corona_df, train_df, test_df):
     plt.plot(corona_df[corona_df['City_Code'] == 5000]['Date'].values, corona_df[corona_df['City_Code'] == 5000]['today_verified_cases'].values, label="TLV")
     plt.plot(corona_df[corona_df['City_Code'] == 4000]['Date'].values, corona_df[corona_df['City_Code'] == 4000]['today_verified_cases'].values, label="HAIFA")
     plt.plot(corona_df[corona_df['City_Code'] == 6100]['Date'].values, corona_df[corona_df['City_Code'] == 6100]['today_verified_cases'].values, label="BNEI BRAK")
+    plt.plot(corona_df[corona_df['City_Code'] == 3730]['Date'].values, corona_df[corona_df['City_Code'] == 3730]['today_verified_cases'].values, label="Givat Zeev")
+    plt.plot(corona_df[corona_df['City_Code'] == 53]['Date'].values, corona_df[corona_df['City_Code'] == 53]['today_verified_cases'].values, label="Atlit")
     plt.axhline(corona_df[corona_df['City_Code'] == 5000]['today_verified_cases'].values.mean(), color='r', alpha=0.2, linestyle='--')
     plt.axhline(corona_df[corona_df['City_Code'] == 5000]['today_verified_cases'].values.std(), color='b', alpha=0.2, linestyle='--')
-    plt.xlabel('#Sample')
+    plt.xlabel('Date')
     plt.ylabel('daily new cases')
     plt.legend(loc='best', fancybox=True, shadow=True)
     plt.grid(True)
@@ -357,70 +346,82 @@ def investigate_corona_df(corona_df):
     plt.plot(corona_df[corona_df['City_Code'] == 5000]['Date'].values, corona_df[corona_df['City_Code'] == 5000]['today_verified_cases_smoothed'].values, label="TLV")
     plt.plot(corona_df[corona_df['City_Code'] == 4000]['Date'].values, corona_df[corona_df['City_Code'] == 4000]['today_verified_cases_smoothed'].values, label="HAIFA")
     plt.plot(corona_df[corona_df['City_Code'] == 6100]['Date'].values, corona_df[corona_df['City_Code'] == 6100]['today_verified_cases_smoothed'].values, label="BNEI BRAK")
-    plt.xlabel('#Sample')
+    plt.plot(corona_df[corona_df['City_Code'] == 3730]['Date'].values, corona_df[corona_df['City_Code'] == 3730]['today_verified_cases_smoothed'].values, label="Givat Zeev")
+    plt.plot(corona_df[corona_df['City_Code'] == 53]['Date'].values, corona_df[corona_df['City_Code'] == 53]['today_verified_cases_smoothed'].values, label="Atlit")
+    plt.xlabel('Date')
     plt.ylabel('daily new cases')
     plt.legend(loc='best', fancybox=True, shadow=True)
     plt.grid(True)
     plt.title('New Cases smooth')
     plt.show()
 
-    params = DataParams()
+    print('not smoothed')
+    run_knn_best_columns(K, train_df, test_df)
+    # corona_df2 = corona_df[best_columns]
+    # train_df, test_df = train_test_split(corona_df2, test_size=params.split_test_size, random_state=params.split_random_state)
+    # knn_output = run_knn(6, train_df, test_df)
+    # print(f'without normalization: {knn_output}')
 
-    best_columns = ['vaccinated_dose_3_total', 'dose_3_in_last_2_week', 'verified_cases_7_days_ago', 'City_Code',
-                    'verified_cases_14_days_ago', 'today_verified_cases', 'colour']
+    train_df['today_verified_cases'] = train_df['today_verified_cases_smoothed']
+    test_df['today_verified_cases'] = test_df['today_verified_cases_smoothed']
+    print('smoothed')
+    run_knn_best_columns(K, train_df, test_df)
+    exit(0)
 
-    corona_df2 = corona_df[best_columns]
-    train_df, test_df = train_test_split(corona_df2, test_size=params.split_test_size, random_state=params.split_random_state)
-    knn_output = run_knn(6, train_df, test_df)
-    print(f'without normalization: {knn_output}')
+    # corona_df = corona_df[best_columns]
+    # train_df, test_df = train_test_split(corona_df, test_size=params.split_test_size, random_state=params.split_random_state)
+    # knn_output = run_knn(6, train_df, test_df)
+    # print(f'with normalization: {knn_output}')
 
-    corona_df['today_verified_cases'] = corona_df['today_verified_cases_smoothed']
-    corona_df = corona_df[best_columns]
-    train_df, test_df = train_test_split(corona_df, test_size=params.split_test_size, random_state=params.split_random_state)
-    knn_output = run_knn(6, train_df, test_df)
-    print(f'with normalization: {knn_output}')
+
+def run_knn_best_columns(k, train, test, weights='uniform'):
+    train_df = train[best_columns]
+    test_df = test[best_columns]
+    knn_output = run_knn(k, train_df, test_df, weights)
+    print_results(knn_output)
+
+
+def print_results(knn_output):
+    acc = knn_output['acc']
+    mae = knn_output['mae']
+    test_mean = knn_output['test_mean']
+    print(f'knn_on_small_cities accuracy: R2:{acc}, mae: {mae}, y_test_mean={test_mean}')
 
 
 if __name__ == "__main__":
-    # play_knn()
-    # data = pd.read_csv('train_df.csv')
-    # data.sort_values(by=['City_Code', 'Date'], inplace=True)
+    # Load data
     corona_df = pd.read_csv('../Preprocess/corona_df.csv')
-    # investigate_corona_df(corona_df)
-
     train_df = pd.read_csv('../Preprocess/train_df.csv')
-    full_test_df = pd.read_csv('../Preprocess/test_df.csv')
+    test_df = pd.read_csv('../Preprocess/test_df.csv')
 
     corona_df['Date'] = pd.to_datetime(corona_df['Date'])
     train_df['Date'] = pd.to_datetime(train_df['Date'])
-    full_test_df['Date'] = pd.to_datetime(full_test_df['Date'])
+    test_df['Date'] = pd.to_datetime(test_df['Date'])
 
     corona_df.sort_values(by=['Date'], inplace=True)
     train_df.sort_values(by=['Date'], inplace=True)
-    full_test_df.sort_values(by=['Date'], inplace=True)
+    test_df.sort_values(by=['Date'], inplace=True)
 
-    # investigate_corona_df(train_df)
-    # investigate_corona_df(full_test_df)
-
-    best_columns = ['vaccinated_dose_3_total', 'dose_3_in_last_2_week', 'verified_cases_7_days_ago', 'City_Code',
-                    'verified_cases_14_days_ago', 'colour'] + [params.Y] # 'colour' is not realy part of the best columns
-
-    # best_columns = ['Cumulative_verified_cases', 'verified_cases_14_days_ago', 'final_score',
-    #                 'verified_cases_8_days_ago', 'dose_1_in_last_2_week', 'Cumulated_deaths',
-    #                 'verified_cases_9_days_ago', 'verified_cases_3_days_ago', 'dose_3_in_last_2_week',
-    #                 'verified_cases_13_days_ago', 'City_Code', 'verified_cases_10_days_ago'] + [params.Y]
-
-    # data = preprocess(data)
-    # model, X_test, y_test = init_model(data)
-    train_df = train_df[best_columns]
-    test_df = full_test_df[best_columns]
+    ################
+    # run_knn_best_columns(K, train_df, full_test_df)
+    ################
+    # experiment_k(train_df, test_df)
+    # exit(0)
+    ################
+    experiment_weights(train_df, test_df)
+    exit(0)
+    ################
+    # investigate_corona_df(corona_df, train_df, test_df)
+    ################
     corona_df = corona_df[best_columns]
     run_knn_with_split(6, corona_df)
-    acc = run_knn(6, train_df, test_df)
-    print(f'knn accuracy: {acc}')
-    exit(0)
+    ################
+
     # plot_graphs(6, train_df, test_df)
-    # experiment_k(train_df)
-    # experiment_param(train_df)
-    # experiment_features(train_df, cols)
-    experiment_subset_data(6, train_df, test_df, full_test_df, best_columns)
+    experiment_features(train_df, cols)
+
+    # train_df = train_df.drop(['City_Name', 'Date'], axis=1)
+    # test_df = full_test_df.drop(['City_Name', 'Date'], axis=1)
+
+
+    experiment_subset_data(6, train_df, test_df, test_df, best_columns)

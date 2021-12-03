@@ -290,12 +290,12 @@ if __name__ == "__main__":
     # plot_time_series(rolling_average_series, '7 Days rolling average', 'Avg value')
 
     # Apply transformations (if needed)
-    transformer = DataTransformation(rolling_average_series.copy())
-    time_series_sqrt = transformer.sqrt()
+    transformer = DataTransformation(national_daily_cases.copy())
+    time_series_log = transformer.log(increment_val=1)
     time_series_transformed = transformer.difference(lags=1)
     # Test for stationarity
     s_test = StationarityTests()
-    s_test.ADF_Stationarity_Test(rolling_average_series, printResults=True)
+    s_test.ADF_Stationarity_Test(time_series_transformed, printResults=True)
     print("Is the time series stationary? {0}".format(s_test.is_stationary))
 
     # Define training and test sets
@@ -303,16 +303,17 @@ if __name__ == "__main__":
     test_end = datetime(2021, 8, 17)
 
     # Run the AlgoRunner with original time series
-    runner1 = AlgoRunner(rolling_average_series, train_end, test_end)
+    runner1 = AlgoRunner(time_series_transformed, train_end, test_end)
     runner1.plot_correlation_plots(number_of_lags=25)
-    runner1.run_ma_regressor(14, use_rolling_forecast=True)
+    runner1.run_ma_regressor(7, use_rolling_forecast=True)
     # Run the AlgoRunner with transformed time series
     runner2 = AlgoRunner(time_series_transformed, train_end, test_end,
-                        original_time_series=rolling_average_series,
-                        transformations=['sqrt', 'difference'],
-                        diff_params=(1, time_series_sqrt))
+                         original_time_series=rolling_average_series,
+                         transformations=['log', 'difference'],
+                         diff_params=(1, time_series_log),
+                         log_exp_delta=1)
     runner2.plot_correlation_plots(number_of_lags=25)
-    runner2.run_ma_regressor(14, use_rolling_forecast=True)
+    runner2.run_ma_regressor(7, use_rolling_forecast=True)
 
 
 

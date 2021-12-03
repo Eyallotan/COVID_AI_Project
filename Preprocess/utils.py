@@ -1,6 +1,9 @@
 from datetime import datetime
 import pandas as pd
 import math
+import numpy as np
+from sklearn import metrics
+
 
 '''
 This file contains parameters that are used across all of our data frames. We define them here to 
@@ -37,6 +40,10 @@ def generate_output_csv(df, output_name):
 
 
 def preprocess_raw_dataset():
+    """
+    This method preprocesses the raw dataset and makes it ready to be used by our algorithms. The
+    method will save the processed data as csv named 'corona_city_table_preprocessed'
+    """
     # read main data frame
     corona_df = pd.read_csv('../Resources/corona_city_table_ver_00155.csv')
     corona_df['Date'] = pd.to_datetime(corona_df['Date'])
@@ -78,6 +85,29 @@ def preprocess_raw_dataset():
 
     # generate the output df
     generate_output_csv(corona_df, 'corona_city_table_preprocessed')
+
+
+def print_result_metrics(y_true, y_pred):
+    """
+    Print model accuracy using various metrics.
+    :param y_true: array-like of shape (n_samples,) or (n_samples, n_outputs)
+        Ground truth (correct) target values.
+    :param y_pred: array-like of shape (n_samples,) or (n_samples, n_outputs)
+        Estimated target values.
+    """
+    print('###----Metrics for model accuracy---###')
+    mape = metrics.mean_absolute_percentage_error(y_true, y_pred)
+    mae = metrics.mean_absolute_error(y_true, y_pred)
+    mse = metrics.mean_squared_error(y_true, y_pred)
+    med = metrics.median_absolute_error(y_true, y_pred)
+    r2 = metrics.r2_score(y_true, y_pred)
+    print('Test Data Mean: ', np.mean(y_true.iloc[:, 0]))
+    print('Mean Absolute Error', mae)
+    print('Mean Squared Error:', mse)
+    print('Mean Absolute Percentage Error: ', mape)
+    print('Root Mean Squared Error:', np.sqrt(mse))
+    print('Median Absolute Error:', med)
+    print('R2 score:', r2)
 
 
 if __name__ == "__main__":

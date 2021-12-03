@@ -8,6 +8,7 @@ from statsmodels.tsa.arima.model import ARIMA
 from datetime import timedelta
 from time import time
 from DataTransformation import DataTransformation
+from Preprocess import utils
 
 
 class AlgoRunner:
@@ -164,19 +165,7 @@ class AlgoRunner:
         plt.title('Data vs. Predictions', fontsize=20)
         plt.ylabel('Values', fontsize=16)
         plt.show()
-        print('###----Metrics for model accuracy---###')
-        mape = metrics.mean_absolute_percentage_error(self.test_data, predictions)
-        mae = metrics.mean_absolute_error(self.test_data, predictions)
-        mse = metrics.mean_squared_error(self.test_data, predictions)
-        med = metrics.median_absolute_error(self.test_data, predictions)
-        r2 = metrics.r2_score(self.test_data, predictions)
-        print('Mean Absolute Percentage Error: ', mape)
-        print('Test Data Mean: ', np.mean(self.test_data.iloc[:, 0]))
-        print('Mean Absolute Error', mae)
-        print('Mean Squared Error:', mse)
-        print('Root Mean Squared Error:', np.sqrt(mse))
-        print('R2 score:', r2)
-        print('Median Absolute Error:', med)
+        utils.print_result_metrics(self.test_data, predictions)
 
     def rolling_forecast(self, model_orders):
         """
@@ -190,6 +179,7 @@ class AlgoRunner:
         for end_date in self.test_data.index:
             train_data = self.time_series[:end_date - timedelta(days=1)]
             model = ARIMA(train_data, order=model_orders)
+            # with model.fix_params({'ma.L6': 0.0}):
             model_fit = model.fit()
             # print model summary
             print(model_fit.summary())

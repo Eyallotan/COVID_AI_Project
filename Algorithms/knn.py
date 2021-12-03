@@ -1,5 +1,5 @@
 from random import sample
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.neighbors import KNeighborsRegressor
@@ -76,6 +76,7 @@ def run_knn_with_split(k, examples, weights='uniform'):
 
     avg_accuracy = sum / divider # tscv.n_splits
     print(f'avg accuracy: {avg_accuracy}')
+
 
 def run_knn(k, train, test, weights='uniform'):
     neigh = KNeighborsRegressor(n_neighbors=k, weights=weights)
@@ -159,6 +160,31 @@ def plot_graphs(k, train, test, weights='uniform'):
     plt.grid(True)
     plt.title('y_true 50 to 200')
     plt.show()
+
+
+def print_ranges(train_lower, train_upper, test_upper):
+    train_lower = train_lower.strftime('%d-%m-%Y')
+    train_upper = train_upper.strftime('%d-%m-%Y')
+    test_upper = test_upper.strftime('%d-%m-%Y')
+    print(f'Train date range: {train_lower} - {train_upper}. test: {train_upper} - {test_upper}')
+
+
+def experiment_rolling_train(k, train, weights='uniform'):
+    train = train[best_columns + ['Date']]
+    train_lower = train['Date'].min()
+    max_date = train['Date'].max()
+    train_upper = train_lower + timedelta(days=30)
+    test_upper = train_upper + timedelta(days=30)
+    while test_upper < max_date:
+        tmp_train = train[(train['Date'] > train_lower) & (train['Date'] <= train_upper)]
+        tmp_test = train[(train['Date'] > train_upper) & (train['Date'] < test_upper)]
+        knn_output = run_knn(k, tmp_train[best_columns], tmp_test[best_columns], weights)
+        print_ranges(train_lower, train_upper, test_upper)
+        print_results(knn_output)
+
+        train_lower = train_upper
+        train_upper = test_upper
+        test_upper = train_upper + timedelta(days=30)
 
 
 def experiment_features(examples, columns):
@@ -329,6 +355,15 @@ def experiment_subset_data(k, train_df, test_df, full_test_df, best_columns):
 
 
 def investigate_corona_df(corona_df, train_df, test_df):
+    train_min_date = train_df['Date'].min().strftime('%d-%m-%Y')
+    train_max_date = train_df['Date'].max().strftime('%d-%m-%Y')
+
+    test_min_date = test_df['Date'].min().strftime('%d-%m-%Y')
+    test_max_date = test_df['Date'].max().strftime('%d-%m-%Y')
+
+    print(f'Train date range: {train_min_date} - {train_max_date}')
+    print(f'Train date range: {test_min_date} - {test_max_date}')
+
     plt.plot(corona_df[corona_df['City_Code'] == 5000]['Date'].values, corona_df[corona_df['City_Code'] == 5000]['today_verified_cases'].values, label="TLV")
     plt.plot(corona_df[corona_df['City_Code'] == 4000]['Date'].values, corona_df[corona_df['City_Code'] == 4000]['today_verified_cases'].values, label="HAIFA")
     plt.plot(corona_df[corona_df['City_Code'] == 6100]['Date'].values, corona_df[corona_df['City_Code'] == 6100]['today_verified_cases'].values, label="BNEI BRAK")
@@ -405,16 +440,18 @@ if __name__ == "__main__":
     ################
     # run_knn_best_columns(K, train_df, full_test_df)
     ################
+    experiment_rolling_train(K, train_df)
+    exit(0)
+    ################
     # experiment_k(train_df, test_df)
     # exit(0)
     ################
-    experiment_weights(train_df, test_df)
-    exit(0)
+    # experiment_weights(train_df, test_df)
     ################
-    # investigate_corona_df(corona_df, train_df, test_df)
+    investigate_corona_df(corona_df, train_df, test_df)
     ################
-    corona_df = corona_df[best_columns]
-    run_knn_with_split(6, corona_df)
+    # corona_df = corona_df[best_columns]
+    # run_knn_with_split(6, corona_df)
     ################
 
     # plot_graphs(6, train_df, test_df)

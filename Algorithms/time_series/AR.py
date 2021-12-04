@@ -32,32 +32,31 @@ def generate_daily_new_cases_csv(city_code):
     cities_df = cities_df[['Date', 'City_Code', 'Cumulative_verified_cases']]
     out_df = cities_df.loc[cities_df['City_Code'] == city_code]
 
-    city_codes = list(dict.fromkeys(cities_df['City_Code'].values))
     # get rid of fields containing a "<15" value and replace them with ascending sequence of
     # number from 1 to 14
     column = 'Cumulative_verified_cases'
-    for city in city_codes:
-        count = cities_df.loc[(cities_df[column] == "<15") & (cities_df['City_Code'] ==
-                                                              city), column].count()
-        factor = count / 14
-        # if factor is less than 1, put the mean value in all fields and call it a day..
-        if 0 <= factor < 1:
-            cities_df.loc[(cities_df[column] == "<15") & (cities_df['City_Code'] ==
-                                                          city), column] = 7
-        else:
-            number_of_rows_for_each_value = math.floor(factor)
-            counter = 0
-            i = 1
-            for j, row in out_df.iterrows():
-                if row['City_Code'] == city and row[column] == "<15":
-                    out_df.at[j, column] = i
-                    counter += 1
-                    if counter == number_of_rows_for_each_value:
-                        i += 1
-                        counter = 0
-                        if i == 15:
-                            break
-        print(f'processed column {column} for city {city}')
+    city = city_code
+    count = cities_df.loc[(cities_df[column] == "<15") & (cities_df['City_Code'] ==
+                                                          city), column].count()
+    factor = count / 14
+    # if factor is less than 1, put the mean value in all fields and call it a day..
+    if 0 <= factor < 1:
+        out_df.loc[(cities_df[column] == "<15"), column] = 7
+    else:
+        number_of_rows_for_each_value = math.floor(factor)
+        counter = 0
+        i = 1
+        for j, row in out_df.iterrows():
+            if row['City_Code'] == city and row[column] == "<15":
+                out_df.at[j, column] = i
+                counter += 1
+                if counter == number_of_rows_for_each_value:
+                    i += 1
+                    counter = 0
+                    if i == 15:
+                        break
+
+    print(f'processed column {column} for city {city}')
     out_df[column].replace({"<15": 14}, inplace=True)
     out_df[column] = pd.to_numeric(out_df[column])
 
@@ -77,7 +76,7 @@ def generate_daily_new_cases_csv(city_code):
     # out_df['Date'] = pd.to_datetime(out_df['Date'])
     # out_df = out_df[(out_df['Date'] >= params.start_date) & (out_df['Date'] <= params.end_date)]
 
-    utils.generate_output_csv(out_df, 'daily_new_cases_time_series')
+    utils.generate_output_csv(out_df, f'daily_new_cases_time_series_{city_code}')
 
 
 class StationarityTests:
@@ -219,7 +218,7 @@ def plot_time_series(time_series, title=None, ylabel=None):
     for month in range(3, 13):
         plt.axvline(pd.to_datetime('2020' + '-' + str(month) + '-01'), color='k',
                     linestyle='--', alpha=0.2)
-    for month in range(1, 10):
+    for month in range(1, 13):
         plt.axvline(pd.to_datetime('2021' + '-' + str(month) + '-01'), color='k',
                     linestyle='--', alpha=0.2)
     plt.axhline(time_series.iloc[:, 0].mean(), color='r', alpha=0.2, linestyle='--')
@@ -234,8 +233,9 @@ def generate_time_series_for_city(city_code):
     :param city_code: The city that we want to create this time series for.
     :return: Time series dataset.
     """
-    # generate_daily_new_cases_csv(city_code)
-    time_series = pd.read_csv('daily_new_cases_time_series.csv', index_col=0, parse_dates=True)
+    generate_daily_new_cases_csv(city_code)
+    time_series = pd.read_csv(f'daily_new_cases_time_series_{city_code}.csv', index_col=0,
+                              parse_dates=True)
     time_series = time_series.asfreq(pd.infer_freq(time_series.index))
 
     print('Shape of data \t', time_series.shape)
@@ -262,6 +262,7 @@ def generate_rolling_average_series():
 
     return time_series
 
+
 def generate_daily_cases_national():
     """
     A simple function that creates a time series that holds for each day the total number of new
@@ -280,13 +281,45 @@ def generate_daily_cases_national():
     return time_series
 
 
+def print_time_series_for_ten_largest_cities():
+    """
+    Print a plot containing daily new cases for the ten largest cities.
+    """
+    top_ten_cities_dict = {
+        3000: "Jerusalem",
+        5000: "Tel Aviv",
+        4000: "Haifa",
+        8300: "Rishon Lezion",
+        7900: "Petah Tikva",
+        70: "Ashdod",
+        7400: "Netanya",
+        6100: "Bnei Brak",
+        9000: "Be'er Sheva",
+        6600: "Holon"
+    }
+    plt.figure(figsize=(10, 4))
+    for month in range(3, 13):
+        plt.axvline(pd.to_datetime('2020' + '-' + str(month) + '-01'), color='k',
+                    linestyle='--', alpha=0.2)
+    for month in range(1, 13):
+        plt.axvline(pd.to_datetime('2021' + '-' + str(month) + '-01'), color='k',
+                    linestyle='--', alpha=0.2)
+    plt.title('Daily new cases for most populated cities', fontsize=20)
+    plt.ylabel('Daily new cases', fontsize=16)
+    for key, value in top_ten_cities_dict.items():
+        time_series = generate_time_series_for_city(key)
+        plt.plot(time_series, label=value)
+    plt.legend(fancybox=True, framealpha=1, shadow=True, borderpad=1, fontsize=12)
+    plt.show()
+
+
 if __name__ == "__main__":
     # Define the time series we want to work with
     time_series = generate_time_series_for_city(city_code=5000)
     rolling_average_series = generate_rolling_average_series()
     national_daily_cases = generate_daily_cases_national()
 
-    # plot_time_series(national_daily_cases, 'Daily new cases', 'New Cases')
+    # plot_time_series(national_daily_cases, 'National daily new cases', 'Daily new cases')
     # plot_time_series(rolling_average_series, '7 Days rolling average', 'Avg value')
 
     # Apply transformations (if needed)
@@ -304,16 +337,16 @@ if __name__ == "__main__":
 
     # Run the AlgoRunner with original time series
     runner1 = AlgoRunner(time_series_transformed, train_end, test_end)
-    runner1.plot_correlation_plots(number_of_lags=25)
-    runner1.run_ma_regressor(7, use_rolling_forecast=True)
+    # runner1.plot_correlation_plots(number_of_lags=25)
+    runner1.run_ma_regressor(20, use_rolling_forecast=True)
     # Run the AlgoRunner with transformed time series
     runner2 = AlgoRunner(time_series_transformed, train_end, test_end,
-                         original_time_series=rolling_average_series,
+                         original_time_series=national_daily_cases,
                          transformations=['log', 'difference'],
                          diff_params=(1, time_series_log),
                          log_exp_delta=1)
-    runner2.plot_correlation_plots(number_of_lags=25)
-    runner2.run_ma_regressor(7, use_rolling_forecast=True)
+    # runner2.plot_correlation_plots(number_of_lags=25)
+    runner2.run_ma_regressor(20, use_rolling_forecast=True)
 
 
 

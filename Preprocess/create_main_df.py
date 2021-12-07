@@ -4,6 +4,24 @@ from Preprocess import extract_daily_new_cases
 from Preprocess import extract_vaccination_stats
 from Preprocess import normalize_df
 
+
+def shift_columns(df):
+    """
+    Shift up by 1 all relevant columns from the corona df. The relevant columns are those who
+    contain data up until the current date (including the actual date that we want to predict).
+    By shifting up by one we make each feature represent the value of the previous day,
+    which fits our prediction goals.
+    :param df: The corona data frame containing the columns that we want to shift.
+    :return: The shifted data frame.
+    """
+    columns_to_shift = ['Cumulative_verified_cases', 'Cumulated_recovered', 'Cumulated_deaths',
+                        'Cumulated_number_of_tests', 'Cumulated_number_of_diagnostic_tests',
+                        'colour', 'final_score']
+    for column in columns_to_shift:
+        df[column] = df[column].shift(-1)
+    return df
+
+
 '''
 This code generates the main corona data frame. We use external code that generates all columns 
 and then aggregate all of the data. 
@@ -20,6 +38,9 @@ if __name__ == "__main__":
     corona_df['Date'] = pd.to_datetime(corona_df['Date'])
     params = utils.DataParams()
 
+    # shift by 1 all columns that contain data on the current day. We want each feature to
+    # represent information up to the current date (not including).
+    corona_df = shift_columns(corona_df)
     # get external columns
     vaccination_df = extract_vaccination_stats.generate_vaccination_columns()
     daily_new_cases_df = extract_daily_new_cases.generate_daily_new_cases_df()

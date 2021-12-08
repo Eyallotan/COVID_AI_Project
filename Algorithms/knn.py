@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.neighbors import KNeighborsRegressor
-from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold
 from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error, mean_absolute_error
 from sklearn.model_selection import TimeSeriesSplit
@@ -11,7 +10,8 @@ import math
 
 from Preprocess.utils import DataParams
 
-K=6
+K = 6
+
 params = DataParams()
 cols = ['City_Code','Cumulative_verified_cases',
         'Cumulated_recovered','Cumulated_deaths','Cumulated_number_of_tests',
@@ -95,10 +95,13 @@ def run_knn(k, train, test, weights='uniform'):
 
     # my_acc = 1 - ((y_test - y_predicted)** 2).sum() / ((y_test - y_test.mean()) ** 2).sum()
 
-    return {'acc': acc, 'mae': mae, 'test_mean': y_test.mean()} # , 'y_test': y_test, 'y_predicted': y_predicted, 'mse': None
+    return {'acc': acc, 'mae': mae, 'test_mean': y_test.mean(), 'y_test': y_test, 'y_predicted': y_predicted} # , 'mse': None
 
 
 def plot_graphs(k, train, test, weights='uniform'):
+    train = train[best_columns]
+    test = test[best_columns]
+
     knn_output = run_knn(k, train, test, weights)
     y_test = knn_output['y_test']
     y_predicted = knn_output['y_predicted']
@@ -188,6 +191,10 @@ def experiment_rolling_train(k, train, weights='uniform'):
 
 
 def experiment_features(examples, columns):
+    columns.remove('City_Name')
+    columns.remove('Date')
+    columns.remove('today_verified_cases_smoothed')
+    columns.remove('today_verified_cases')
     for m in range(5, 15):
         print(f'm={m}')
         experiment_m_features(m, examples, columns)
@@ -201,12 +208,9 @@ def experiment_m_features(m, examples, columns):
         split_date = datetime(2021, 7, 23)
         train_examples = examples[examples['Date'] < split_date][test_columns]
         test_examples = examples[examples['Date'] >= split_date][test_columns]
-        knn_output = run_knn(5, train_examples, test_examples)
-        acc = knn_output['acc']
-        mse = knn_output['mse']
-        test_mean = knn_output['test_mean']
-
-        print(f'accuracy:{acc}, mse:{mse}, test_mean:{test_mean}, columns={test_columns}')
+        knn_output = run_knn(K, train_examples, test_examples)
+        print(f'columns={test_columns}')
+        print_results(knn_output)
 
 
 def experiment_k_kfold(examples):
@@ -327,7 +331,10 @@ def run_knn_on_dates(k, train_df, test_df, start_date, end_date, best_columns):
     print(f'knn_on_big_new_cases accuracy: {acc}, mae: {mae}, y_test_mean={test_mean}, my_acc={my_acc}, start_date {start_date}, , end_date {end_date}')
 
 
-def experiment_subset_data(k, train_df, test_df, full_test_df, best_columns):
+def experiment_subset_data(k, train_df, test_df, full_test_df):
+    train_df = train_df[best_columns]
+    test_df = test_df[best_columns]
+
     run_knn_on_small_cities(10000, k, train_df, test_df)
     run_knn_on_small_cities(100000, k, train_df, test_df)
     run_knn_on_small_new_cases(30, k, train_df, test_df)
@@ -392,21 +399,11 @@ def investigate_corona_df(corona_df, train_df, test_df):
 
     print('not smoothed')
     run_knn_best_columns(K, train_df, test_df)
-    # corona_df2 = corona_df[best_columns]
-    # train_df, test_df = train_test_split(corona_df2, test_size=params.split_test_size, random_state=params.split_random_state)
-    # knn_output = run_knn(6, train_df, test_df)
-    # print(f'without normalization: {knn_output}')
 
     train_df['today_verified_cases'] = train_df['today_verified_cases_smoothed']
     test_df['today_verified_cases'] = test_df['today_verified_cases_smoothed']
     print('smoothed')
     run_knn_best_columns(K, train_df, test_df)
-    exit(0)
-
-    # corona_df = corona_df[best_columns]
-    # train_df, test_df = train_test_split(corona_df, test_size=params.split_test_size, random_state=params.split_random_state)
-    # knn_output = run_knn(6, train_df, test_df)
-    # print(f'with normalization: {knn_output}')
 
 
 def run_knn_best_columns(k, train, test, weights='uniform'):
@@ -420,7 +417,7 @@ def print_results(knn_output):
     acc = knn_output['acc']
     mae = knn_output['mae']
     test_mean = knn_output['test_mean']
-    print(f'knn_on_small_cities accuracy: R2:{acc}, mae: {mae}, y_test_mean={test_mean}')
+    print(f'knn accuracy: R2:{acc}, mae: {mae}, y_test_mean={test_mean}')
 
 
 if __name__ == "__main__":
@@ -438,27 +435,25 @@ if __name__ == "__main__":
     test_df.sort_values(by=['Date'], inplace=True)
 
     ################
+    # experiment_features(train_df, list(train_df.columns))
+    # exit(0)
+    ################
     # run_knn_best_columns(K, train_df, full_test_df)
     ################
-    experiment_rolling_train(K, train_df)
-    exit(0)
+    # experiment_rolling_train(K, train_df)
+    # exit(0)
     ################
     # experiment_k(train_df, test_df)
     # exit(0)
     ################
     # experiment_weights(train_df, test_df)
     ################
-    investigate_corona_df(corona_df, train_df, test_df)
+    # investigate_corona_df(corona_df, train_df, test_df)
+    # exit(0)
     ################
     # corona_df = corona_df[best_columns]
-    # run_knn_with_split(6, corona_df)
+    # run_knn_with_split(K, corona_df)
     ################
-
-    # plot_graphs(6, train_df, test_df)
-    experiment_features(train_df, cols)
-
-    # train_df = train_df.drop(['City_Name', 'Date'], axis=1)
-    # test_df = full_test_df.drop(['City_Name', 'Date'], axis=1)
-
-
-    experiment_subset_data(6, train_df, test_df, test_df, best_columns)
+    # plot_graphs(K, train_df, test_df)
+    ################
+    experiment_subset_data(K, train_df, test_df, test_df)

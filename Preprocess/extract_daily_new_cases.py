@@ -9,14 +9,6 @@ for each row(for city_code in cities_df['City_Code'].unique())
 '''
 
 
-'''
-def before_date():
-    march20 = datetime(2020, 3, 28)
-    march20_df = cities_df[cities_df['Date'] < march20]
-
-'''
-
-
 def generate_daily_new_cases_df():
     cities_df = pd.read_csv('corona_city_table_preprocessed.csv')
     cities_df['Date'] = pd.to_datetime(cities_df['Date'])

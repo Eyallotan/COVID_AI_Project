@@ -2,13 +2,14 @@ import pandas as pd
 from Preprocess.utils import DataParams
 
 '''
-This code extracts vaccination stats from for each city. The stats are calculated in the following
+This code extracts vaccination stats for each city. The stats are calculated in the following
 way:
 For each of the vaccinations (1/2/3), there are N weekly stats columns.
 If a row represents the date X , then column 1 (out of N) for vaccine 1 represents the accumulated 
 number of people that were vaccinated with the first vaccine in 1 week prior to X. 
 Column 2 represents 2 weeks prior to X and so on, up to N weeks prior to the date X.
-The data frame also contains the total numbers of vaccinated people for each of the vaccines.
+The data frame also contains the total numbers of vaccinated people for each of the vaccines (up 
+until the current day, not included).
 
 Date boundaries: 
 The weekly sum columns are calculated based on N previous weeks. Since the data frame contains 
@@ -29,13 +30,11 @@ def generate_vaccination_columns():
     vaccinated_df['Date'] = pd.to_datetime(vaccinated_df['Date'])
     params = DataParams()
 
-    # choose date ranges (see file prolog for more details)
-    vaccinated_df = vaccinated_df[(vaccinated_df['Date'] >= params.start_date) &
-                                  (vaccinated_df['Date'] <= params.end_date)]
-
-    # get rid of fields containing a "<15" value and replace them with 0
+    # get rid of fields containing a "<15" value and replace them with the median value which is
+    # 7. Since vaccine stats accumulate fast this heuristic is reasonable here and no need for more
+    # complex handling.
     for column in vaccinated_df.filter(regex="dose_.*"):
-        vaccinated_df[column].replace({"<15": 1}, inplace=True)
+        vaccinated_df[column].replace({"<15": 7}, inplace=True)
         vaccinated_df[column] = pd.to_numeric(vaccinated_df[column])
 
     # the df contains vaccination stats by age. We want the total number of vaccinated so we sum
@@ -47,6 +46,17 @@ def generate_vaccination_columns():
         vaccinated_df[f'dose_{i}_diff'] = \
             vaccinated_df[f'vaccinated_dose_{i}_total'] - vaccinated_df.shift(periods=1)[
                 f'vaccinated_dose_{i}_total'].fillna(0)
+
+    # shift the total vaccination columns by one so that the current day will only contain
+    # information about what happened up until the day before.
+    for i in range(1, 4):
+        vaccinated_df[f'vaccinated_dose_{i}_total'] = \
+            vaccinated_df[f'vaccinated_dose_{i}_total'].shift(-1)
+
+    # choose date ranges (see file prolog for more details). This will handle the NA values that
+    # are created by the shift above.
+    vaccinated_df = vaccinated_df[(vaccinated_df['Date'] >= params.start_date) &
+                                  (vaccinated_df['Date'] <= params.end_date)]
 
     # add sum by week columns
     number_of_weeks = params.number_of_weeks_for_vaccination_stats

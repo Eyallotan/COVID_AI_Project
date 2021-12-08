@@ -18,6 +18,12 @@ def normalize_data_set(result_df):
         if column not in params.not_normalized_columns:
             result_normalized_df[column] = (result_normalized_df[column] * (params.normalization_factor)) / result_normalized_df['population']
 
+    # normalize the color column by dividing by 3 to get values between 0-1
+    result_normalized_df['colour'] = result_normalized_df['colour'] / 3
+
+    # normalize the stoplight score column by dividing by 10 to get values between 0-1
+    result_normalized_df['final_score'] = result_normalized_df['final_score'] / 10
+
     # remove population column from columns we don't want to normalize
     params.not_normalized_columns.remove('population')
     # remove population column from result normalized df

@@ -32,6 +32,11 @@ max = '2021-09-11'
 
 
 def play_knn():
+    """
+    This function was used at the start of the project to play with the basic features of the knn algorithem.
+    it helped to test the filter of panda df, and the train and predict of Scikit-learn knn.
+    :return: None
+    """
     data = pd.read_csv('../Preprocess/output.csv')
     data['Date'] = pd.to_datetime(data['Date'])
 
@@ -57,22 +62,35 @@ def play_knn():
 
 
 def run_knn_with_split(k, examples, weights='uniform'):
-    tscv = TimeSeriesSplit(n_splits=20)
+    """
+    This function does Cross validation to the knn algorithm. it does it with TimeSeriesSplit that always uses the past
+    to predict the future (in cross validation form) more on that in the dry part.
+    :param k: k value of knn
+    :param examples: examples for the cross validation
+    :param weights: weights function of knn
+    :return: None. just prints the accuracies
+    """
+    tscv = TimeSeriesSplit(n_splits=10)
     sum = 0
-    divider = 0
     for train_index, test_index in tscv.split(examples):
         train_examples, test_examples = examples.iloc[train_index], examples.iloc[test_index]
-        acc = run_knn(k, train_examples, test_examples, weights=weights)
-        if acc['acc'] > 0:
-            sum += acc['acc']
-            divider = divider + 1
-        print(f'accuracy: {acc}')
+        knn_output = run_knn(k, train_examples, test_examples, weights=weights)
+        print_results(knn_output)
+        sum += knn_output['acc']
 
-    avg_accuracy = sum / divider # tscv.n_splits
+    avg_accuracy = sum / tscv.n_splits
     print(f'avg accuracy: {avg_accuracy}')
 
 
 def run_knn(k, train, test, weights='uniform'):
+    """
+    This function train knn on the train set and run it on the test set.
+    :param k: k value of knn
+    :param train: train set for knn
+    :param test: test set for knn
+    :param weights: weights function of knn
+    :return: dict with accuracies and stats of the knn test
+    """
     neigh = KNeighborsRegressor(n_neighbors=k, weights=weights)
 
     y_train = train[params.Y].values
@@ -87,13 +105,21 @@ def run_knn(k, train, test, weights='uniform'):
     mae = mean_absolute_error(y_test, y_predicted)
     mape = mean_absolute_percentage_error(y_test, y_predicted)
 
-    # my_acc = 1 - ((y_test - y_predicted)** 2).sum() / ((y_test - y_test.mean()) ** 2).sum()
-
     return {'acc': acc, 'mae': mae, 'test_mean': y_test.mean(), 'y_test': y_test, 'y_predicted': y_predicted} # , 'mse': None
 
 
-def plot_diff_graph(diff, x_label, y_label, title):
+def plot_diff_graph(diff, x_label, y_label, title, y_mean):
+    """
+    This function plots the diff graphs
+    :param diff: diff between y_test and y_pred
+    :param x_label: x axis name
+    :param y_label: y axis name
+    :param title: graph title
+    :param y_mean: y_mean of the test set
+    :return: None
+    """
     plt.plot(diff.sample(100, ignore_index=True), label="diff")
+    plt.axhline(y_mean, color='r', alpha=0.2, linestyle='--')
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.legend(loc='best', fancybox=True, shadow=True)
@@ -103,6 +129,15 @@ def plot_diff_graph(diff, x_label, y_label, title):
 
 
 def plot_graphs(k, train, test, weights='uniform'):
+    """
+    This function plots some graphs of y_pred in respect to y_test.
+    We plot the diff of the first 100 examples, of some ranges of y_test etc.
+    :param k: k value of knn
+    :param train: train set for knn
+    :param test: test set for knn
+    :param weights: weights function of knn
+    :return: None
+    """
     train = train[best_columns]
     test = test[best_columns]
 
@@ -151,12 +186,6 @@ def plot_graphs(k, train, test, weights='uniform'):
     y_spec_patients = y_test[(y_test >= 50) & (y_test <= 200)]
     y_pred_spec_patients = y_predicted[(y_test >= 50) & (y_test <= 200)]
 
-    # diff = abs(y_spec_patients - y_pred_spec_patients)
-    # plt.errorbar(range(100), y_spec_patients[:100], diff[:100], linestyle='None', marker='^')
-    # plt.axhline(y_spec_patients[:100].mean(), color='r', alpha=0.2, linestyle='--')
-    # plt.title('errorbar 50 to 200')
-    # plt.show()
-
     plt.plot(y_spec_patients[:100], '.', label="y_true")
     plt.plot(y_pred_spec_patients[:100], '.', label="y_predicted")
     plt.axhline(y_spec_patients[:100].mean(), color='r', alpha=0.2, linestyle='--')
@@ -170,6 +199,13 @@ def plot_graphs(k, train, test, weights='uniform'):
 
 
 def print_ranges(train_lower, train_upper, test_upper):
+    """
+    This function prints the date range of the train and test set.
+    :param train_lower: train min date
+    :param train_upper: train max date
+    :param test_upper: test max date
+    :return:
+    """
     train_lower = train_lower.strftime('%d-%m-%Y')
     train_upper = train_upper.strftime('%d-%m-%Y')
     test_upper = test_upper.strftime('%d-%m-%Y')
@@ -177,6 +213,14 @@ def print_ranges(train_lower, train_upper, test_upper):
 
 
 def experiment_rolling_train(k, train, weights='uniform'):
+    """
+    This is an implementation of cross validation we tried.
+    it is a rolling window, that each time we train on 30 days and test in the next 30 days.
+    :param k: k value of knn
+    :param train: train set to do the rolling train on
+    :param weights: weights function of knn
+    :return: None.
+    """
     train = train[best_columns + ['Date']]
     train_lower = train['Date'].min()
     max_date = train['Date'].max()
@@ -195,6 +239,12 @@ def experiment_rolling_train(k, train, weights='uniform'):
 
 
 def experiment_features(examples, columns):
+    """
+    This function move over a range of m and test the knn algorithm with m features.
+    :param examples: examples to run the train on.
+    :param columns: features list to test
+    :return: None
+    """
     columns.remove('City_Name')
     columns.remove('Date')
     columns.remove('today_verified_cases_smoothed')
@@ -205,6 +255,13 @@ def experiment_features(examples, columns):
 
 
 def experiment_m_features(m, examples, columns):
+    """
+    This function randomize m features and test the knn based on them and print it's results
+    :param m: number of features to test
+    :param examples: dataset to split to train and test
+    :param columns: columns to choose from
+    :return: None
+    """
     examples['Date'] = pd.to_datetime(examples['Date'])
     for i in range(30):
         test_columns = sample(columns, m) + [params.Y]
@@ -219,6 +276,12 @@ def experiment_m_features(m, examples, columns):
 
 
 def experiment_k_kfold(examples):
+    """
+    This is an old function that we used to do regular k-fold before we realized that the k-fold can use the future to
+    predict the past.
+    :param examples: examples for train and test
+    :return: None
+    """
     kf = KFold(n_splits=5)#, shuffle=True, random_state=307916502)
     K = range(3, 25)
     accuracies = []
@@ -241,6 +304,12 @@ def experiment_k_kfold(examples):
 
 
 def experiment_k(train, test):
+    """
+    This function is used to test k in specific range. that we plot the results on a graph
+    :param train: train data set
+    :param test: test data set
+    :return: None
+    """
     train = train[best_columns]
     test = test[best_columns]
     K = range(3, 100)
@@ -263,6 +332,12 @@ def experiment_k(train, test):
 
 
 def experiment_weights(train, test):
+    """
+    This function test the 2 different weight function of knn algorithm
+    :param train: train data set for knn
+    :param test: test data set for knn
+    :return: None
+    """
     print('testing best weights')
     print('uniform:')
     run_knn_best_columns(K, train, test, 'uniform')
@@ -271,6 +346,15 @@ def experiment_weights(train, test):
 
 
 def run_knn_on_small_cities(population, k, train_df, test_df):
+    """
+    This function filter the test set and testing only on small cities (cities that their population is smaller than
+    population parameter
+    :param population: max population of the records in the test set
+    :param k: k value of knn
+    :param train_df: train for knn
+    :param test_df: test for knn
+    :return: None
+    """
     population_df = pd.read_csv('../Resources/population_table.csv')
     population_df = population_df[['City_Code', 'population']].drop_duplicates()
 
@@ -282,10 +366,19 @@ def run_knn_on_small_cities(population, k, train_df, test_df):
     knn_output = run_knn(k, train_df, test_df)
     print_results(knn_output, f'knn_on_small_cities population < {population}')
     diff = pd.DataFrame(abs(knn_output['y_test'] - knn_output['y_predicted']))
-    plot_diff_graph(diff, '#sample', 'new cases diff', 'Small Cities New Cases Diff')
+    plot_diff_graph(diff, '#sample', 'new cases diff', 'Small Cities New Cases Diff', knn_output['test_mean'])
 
 
 def run_knn_on_big_cities(population, k, train_df, test_df):
+    """
+    This function filter the test set and testing only on big cities (cities that their population is bigger than
+    population parameter
+    :param population: max population of the records in the test set
+    :param k: k value of knn
+    :param train_df: train for knn
+    :param test_df: test for knn
+    :return: None
+    """
     population_df = pd.read_csv('../Resources/population_table.csv')
     population_df = population_df[['City_Code', 'population']].drop_duplicates()
 
@@ -297,28 +390,51 @@ def run_knn_on_big_cities(population, k, train_df, test_df):
     knn_output = run_knn(k, train_df, test_df)
     print_results(knn_output, f'knn_on_big_cities population > {population}')
     diff = pd.DataFrame(abs(knn_output['y_test'] - knn_output['y_predicted']))
-    plot_diff_graph(diff, '#sample', 'new cases diff', 'Big Cities New Cases Diff')
+    plot_diff_graph(diff, '#sample', 'new cases diff', 'Big Cities New Cases Diff', knn_output['test_mean'])
 
 
 def run_knn_on_small_new_cases(new_cases, k, train_df, test_df):
+    """
+    This function tests our output algorithm only on test set where y_test is smaller then new_cases param
+    :param new_cases: max new cases in y_true of test_df
+    :param k: k value of knn
+    :param train_df: train for knn
+    :param test_df: test for knn
+    :return: None
+    """
     test_df = test_df[test_df[params.Y] <= new_cases]
     knn_output = run_knn(k, train_df, test_df)
     print_results(knn_output, f'knn_on_small_new_cases new_cases < {new_cases}')
     diff = pd.DataFrame(abs(knn_output['y_test'] - knn_output['y_predicted']))
-    plot_diff_graph(diff, '#sample', 'new cases diff', 'Small New Cases Diff')
+    plot_diff_graph(diff, '#sample', 'new cases diff', 'Small New Cases Diff', knn_output['test_mean'])
 
 
 def run_knn_on_big_new_cases(new_cases, k, train_df, test_df):
+    """
+    This function tests our output algorithm only on test set where y_test is bigger then new_cases param
+    :param new_cases: min new cases in y_true of test_df
+    :param k: k value of knn
+    :param train_df: train for knn
+    :param test_df: test for knn
+    :return: None
+    """
     test_df = test_df[test_df[params.Y] >= new_cases]
 
     knn_output = run_knn(k, train_df, test_df)
-    test_len = len(knn_output['y_test'])
     print_results(knn_output, f'knn_on_big_new_cases new_cases > {new_cases}')
     diff = pd.DataFrame(abs(knn_output['y_test'] - knn_output['y_predicted']))
-    plot_diff_graph(diff, '#sample', 'new cases diff', 'Big Cities New Cases Diff')
+    plot_diff_graph(diff, '#sample', 'new cases diff', 'Big Cities New Cases Diff', knn_output['test_mean'])
 
 
 def run_knn_on_colour(colour, k, train_df, test_df):
+    """
+    This function test our output algorithm on the input 'Ramzor' colour
+    :param colour: which colour we want to test
+    :param k: k value of knn
+    :param train_df: train for knn
+    :param test_df: test for knn
+    :return: None
+    """
     test_df = test_df[test_df['colour'] == colour]
 
     knn_output = run_knn(k, train_df, test_df)
@@ -333,10 +449,20 @@ def run_knn_on_colour(colour, k, train_df, test_df):
 
     print_results(knn_output, f'knn_on_colour colour={colour_name}')
     diff = pd.DataFrame(abs(knn_output['y_test'] - knn_output['y_predicted']))
-    plot_diff_graph(diff, '#sample', 'new cases diff', f'{colour_name} Cities New Cases Diff')
+    plot_diff_graph(diff, '#sample', 'new cases diff', f'{colour_name} Cities New Cases Diff', knn_output['test_mean'])
 
 
 def run_knn_on_dates(k, train_df, test_df, start_date, end_date, best_columns):
+    """
+    This function filter the test set for specific date range.
+    :param k: k value of knn
+    :param train_df: train for knn
+    :param test_df: test for knn
+    :param start_date: min date for the test set
+    :param end_date: max date for the test set
+    :param best_columns: knn columns
+    :return: None
+    """
     test_df['Date'] = pd.to_datetime(test_df['Date'])
     test_df = test_df[(test_df['Date'] >= start_date) & (test_df['Date'] <= end_date)]
     test_df = test_df[best_columns]
@@ -348,7 +474,14 @@ def run_knn_on_dates(k, train_df, test_df, start_date, end_date, best_columns):
     print(f'knn_on_big_new_cases accuracy: {acc}, mae: {mae}, y_test_mean={test_mean}, my_acc={my_acc}, start_date {start_date}, , end_date {end_date}')
 
 
-def experiment_subset_data(k, train_df, test_df, full_test_df):
+def experiment_subset_data(k, train_df, test_df):
+    """
+    This function print stats and graphs of the different fields we tested the performance of our output algorithm
+    :param k: k value of knn
+    :param train_df: train for knn
+    :param test_df: test for knn
+    :return: None
+    """
     train_df = train_df[best_columns]
     test_df = test_df[best_columns]
 
@@ -379,6 +512,13 @@ def experiment_subset_data(k, train_df, test_df, full_test_df):
 
 
 def investigate_corona_df(corona_df, train_df, test_df):
+    """
+    This function show stats and graphs of our data
+    :param corona_df: the entire data
+    :param train_df: train data set
+    :param test_df: test data set
+    :return: None
+    """
     train_min_date = train_df['Date'].min().strftime('%d-%m-%Y')
     train_max_date = train_df['Date'].max().strftime('%d-%m-%Y')
 
@@ -424,6 +564,14 @@ def investigate_corona_df(corona_df, train_df, test_df):
 
 
 def run_knn_best_columns(k, train, test, weights='uniform'):
+    """
+    This function run knn with the best features found in the experiments
+    :param k: k value of knn
+    :param train: train set for knn
+    :param test: test set for knn
+    :param weights: weights function for knn
+    :return: None
+    """
     train_df = train[best_columns]
     test_df = test[best_columns]
     knn_output = run_knn(k, train_df, test_df, weights)
@@ -431,6 +579,14 @@ def run_knn_best_columns(k, train, test, weights='uniform'):
 
 
 def run_knn_all_columns(k, train, test, weights='uniform'):
+    """
+    This function run and print the results of raw knn (with all features)
+    :param k: k value of knn
+    :param train: train data set for knn
+    :param test: test data set for knn
+    :param weights: weights function for knn
+    :return: None
+    """
     cols.remove('City_Name')
     cols.remove('Date')
     cols.remove('today_verified_cases_smoothed')
@@ -442,6 +598,12 @@ def run_knn_all_columns(k, train, test, weights='uniform'):
 
 
 def print_results(knn_output, string_msg=None):
+    """
+    This function prints the results based on knn_output
+    :param knn_output: the results of run_knn function
+    :param string_msg: the msg to show in the prefix of the message
+    :return: None
+    """
     acc = round(knn_output['acc'], 3)
     mae = round(knn_output['mae'], 3)
     test_mean = round(knn_output['test_mean'], 3)
@@ -452,6 +614,12 @@ def print_results(knn_output, string_msg=None):
 
 
 def evaluate_all_columns(k, train_df):
+    """
+    This function run all columns only on train data set (splits it internally to train and test)
+    :param k: k value of knn
+    :param train_df: data set to train and test the knn
+    :return: None
+    """
     # Leave Y column on
     cols.remove('City_Name')
     cols.remove('Date')
@@ -465,6 +633,12 @@ def evaluate_all_columns(k, train_df):
 
 
 def print_data_stats(train_df, test_df):
+    """
+    Prints date ranges and mean of the data
+    :param train_df: train data set
+    :param test_df: test data set
+    :return:
+    """
     train_min_date = train_df['Date'].min().strftime('%d-%m-%Y')
     train_max_date = train_df['Date'].max().strftime('%d-%m-%Y')
 
@@ -479,6 +653,14 @@ def print_data_stats(train_df, test_df):
 
 
 if __name__ == "__main__":
+    """
+    Here you can run all the above code.
+    There are 2 parts, the uncommented code which is important for each run.
+    And the commented code between the '####' lines.
+    
+    In each run you need to uncomment 1 block between 2 following '####' and run it.
+    Each block is stand alone and will run normally alone.   
+    """
     # Load data
     corona_df = pd.read_csv('../Preprocess/corona_df.csv')
     train_df = pd.read_csv('../Preprocess/train_df.csv')
@@ -515,9 +697,9 @@ if __name__ == "__main__":
     # experiment_weights(train_df, test_df)
     # exit(0)
     ################
-    corona_df = corona_df[best_columns]
-    run_knn_with_split(K, corona_df)
+    # corona_df = corona_df[best_columns]
+    # run_knn_with_split(K, corona_df)
     ################
     # plot_graphs(K, train_df, test_df)
     ################
-    # experiment_subset_data(K, train_df, test_df, test_df)
+    experiment_subset_data(K, train_df, test_df, test_df)

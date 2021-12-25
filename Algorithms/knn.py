@@ -160,14 +160,15 @@ def plot_graphs(k, train, test, weights='uniform'):
     plt.title('errorbar')
     plt.show()
 
-    plt.plot(diff[:100], label="diff")
-    plt.axhline(y_test[:100].mean(), color='r', alpha=0.2, linestyle='--')
-    plt.axhline(y_test[:100].std(), color='b', alpha=0.2, linestyle='--')
+    plt.figure(figsize=(10, 4))
+    plt.plot(diff[:100], label='error')
+    plt.axhline(y_test[:100].mean(), color='r', alpha=0.2, linestyle='--', label='MEAN')
+    plt.axhline(y_test[:100].std(), color='b', alpha=0.2, linestyle='--', label='STD')
     plt.xlabel('#Sample')
-    plt.ylabel('daily new cases')
+    plt.ylabel('Error')
     plt.legend(loc='best', fancybox=True, shadow=True)
     plt.grid(True)
-    plt.title('diff first 100 examples')
+    plt.title('Residuals Of KNN')
     plt.show()
 
     y_no_patients = y_test[y_test == 0]
@@ -323,6 +324,7 @@ def experiment_k(train, test):
     plt.plot(K, r2_accs)
     plt.xlabel('K')
     plt.ylabel('r2')
+    plt.title('K Accuracy')
     plt.show()
 
     plt.plot(K, mae_accs)
@@ -366,7 +368,7 @@ def run_knn_on_small_cities(population, k, train_df, test_df):
     knn_output = run_knn(k, train_df, test_df)
     print_results(knn_output, f'knn_on_small_cities population < {population}')
     diff = pd.DataFrame(abs(knn_output['y_test'] - knn_output['y_predicted']))
-    plot_diff_graph(diff, '#sample', 'new cases diff', 'Small Cities New Cases Diff', knn_output['test_mean'])
+    plot_diff_graph(diff, '#sample', 'new cases diff', 'Small Cities New Cases Error', knn_output['test_mean'])
 
 
 def run_knn_on_big_cities(population, k, train_df, test_df):
@@ -390,7 +392,7 @@ def run_knn_on_big_cities(population, k, train_df, test_df):
     knn_output = run_knn(k, train_df, test_df)
     print_results(knn_output, f'knn_on_big_cities population > {population}')
     diff = pd.DataFrame(abs(knn_output['y_test'] - knn_output['y_predicted']))
-    plot_diff_graph(diff, '#sample', 'new cases diff', 'Big Cities New Cases Diff', knn_output['test_mean'])
+    plot_diff_graph(diff, '#sample', 'new cases diff', 'Big Cities New Cases Error', knn_output['test_mean'])
 
 
 def run_knn_on_small_new_cases(new_cases, k, train_df, test_df):
@@ -528,6 +530,7 @@ def investigate_corona_df(corona_df, train_df, test_df):
     print(f'Train date range: {train_min_date} - {train_max_date}')
     print(f'Train date range: {test_min_date} - {test_max_date}')
 
+    plt.figure(figsize=(10, 4))
     plt.plot(corona_df[corona_df['City_Code'] == 5000]['Date'].values, corona_df[corona_df['City_Code'] == 5000]['today_verified_cases'].values, label="TLV")
     plt.plot(corona_df[corona_df['City_Code'] == 4000]['Date'].values, corona_df[corona_df['City_Code'] == 4000]['today_verified_cases'].values, label="HAIFA")
     plt.plot(corona_df[corona_df['City_Code'] == 6100]['Date'].values, corona_df[corona_df['City_Code'] == 6100]['today_verified_cases'].values, label="BNEI BRAK")
@@ -542,6 +545,7 @@ def investigate_corona_df(corona_df, train_df, test_df):
     plt.title('New Cases')
     plt.show()
 
+    plt.figure(figsize=(10, 4))
     plt.plot(corona_df[corona_df['City_Code'] == 5000]['Date'].values, corona_df[corona_df['City_Code'] == 5000]['today_verified_cases_smoothed'].values, label="TLV")
     plt.plot(corona_df[corona_df['City_Code'] == 4000]['Date'].values, corona_df[corona_df['City_Code'] == 4000]['today_verified_cases_smoothed'].values, label="HAIFA")
     plt.plot(corona_df[corona_df['City_Code'] == 6100]['Date'].values, corona_df[corona_df['City_Code'] == 6100]['today_verified_cases_smoothed'].values, label="BNEI BRAK")
@@ -551,7 +555,7 @@ def investigate_corona_df(corona_df, train_df, test_df):
     plt.ylabel('daily new cases')
     plt.legend(loc='best', fancybox=True, shadow=True)
     plt.grid(True)
-    plt.title('New Cases smooth')
+    plt.title('Daily new cases Rolling Avg (7 Days)')
     plt.show()
 
     print('not smoothed')
@@ -607,10 +611,11 @@ def print_results(knn_output, string_msg=None):
     acc = round(knn_output['acc'], 3)
     mae = round(knn_output['mae'], 3)
     test_mean = round(knn_output['test_mean'], 3)
+    test_len = len(knn_output['y_test'])
     if string_msg is None:
-        print(f'knn accuracy: R2:{acc}, mae: {mae}, y_test_mean={test_mean}')
+        print(f'knn accuracy: R2:{acc}, mae: {mae}, y_test_mean={test_mean}, test_len={test_len}')
     else:
-        print(f'{string_msg}: R2:{acc}, mae: {mae}, y_test_mean={test_mean}')
+        print(f'{string_msg}: R2:{acc}, mae: {mae}, y_test_mean={test_mean}, test_len={test_len}')
 
 
 def evaluate_all_columns(k, train_df):
@@ -702,4 +707,4 @@ if __name__ == "__main__":
     ################
     # plot_graphs(K, train_df, test_df)
     ################
-    experiment_subset_data(K, train_df, test_df, test_df)
+    # experiment_subset_data(K, train_df, test_df)

@@ -94,6 +94,7 @@ def print_result_metrics(y_true, y_pred, one_liner=False):
         Ground truth (correct) target values.
     :param y_pred: array-like of shape (n_samples,) or (n_samples, n_outputs)
         Estimated target values.
+    :param one_liner: Whether to print a compact version of the result metrics.
     """
     test_mean = np.mean(y_true.iloc[:, 0])
     mape = metrics.mean_absolute_percentage_error(y_true, y_pred)

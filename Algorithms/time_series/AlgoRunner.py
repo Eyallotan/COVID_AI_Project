@@ -103,7 +103,7 @@ class AlgoRunner:
         if self.transformations is not None:
             self.predictions, self.test_data = self.invert_regressor_results(self.predictions)
         if print_results is True:
-            self.print_results_and_accuracy(self.predictions, 'AR')
+            self.print_results_and_accuracy('AR')
         return self.predictions
 
     def run_ma_regressor(self, ma_order, train_end, test_end, use_rolling_forecast=False, print_results=True):
@@ -124,7 +124,7 @@ class AlgoRunner:
         if self.transformations is not None:
             self.predictions, self.test_data = self.invert_regressor_results(self.predictions)
         if print_results is True:
-            self.print_results_and_accuracy(self.predictions, 'MA')
+            self.print_results_and_accuracy('MA')
         return self.predictions
 
     def run_arma_regressor(self, ar_order, ma_order, train_end, test_end, use_rolling_forecast=False,
@@ -147,7 +147,7 @@ class AlgoRunner:
         if self.transformations is not None:
             self.predictions, self.test_data = self.invert_regressor_results(self.predictions)
         if print_results is True:
-            self.print_results_and_accuracy(self.predictions, 'ARMA')
+            self.print_results_and_accuracy('ARMA')
         return self.predictions
 
     def run_arima_regressor(self, ar_order, diff_order, ma_order, train_end, test_end,
@@ -171,7 +171,7 @@ class AlgoRunner:
         if self.transformations is not None:
             self.predictions, self.test_data = self.invert_regressor_results(self.predictions)
         if print_results is True:
-            self.print_results_and_accuracy(self.predictions, 'ARIMA')
+            self.print_results_and_accuracy('ARIMA')
         return self.predictions
 
     def run_sarima_regressor(self, model_orders, seasonal_orders, train_end, test_end,
@@ -194,17 +194,19 @@ class AlgoRunner:
         if self.transformations is not None:
             self.predictions, self.test_data = self.invert_regressor_results(self.predictions)
         if print_results is True:
-            self.print_results_and_accuracy(self.predictions, 'SARIMA')
+            self.print_results_and_accuracy('SARIMA')
         return self.predictions
 
-    def print_results_and_accuracy(self, predictions, model_name):
+    def print_results_and_accuracy(self, model_name):
         """
         Print the model accuracy using various metrics and print plots. The plots that are
-        generated are the residuals plot and the data vs. predictions plot.
-        :param predictions: The model predictions.
+        generated are the residuals plot and the data vs. predictions plot. This method assumes
+        that the self.predictions field was set properly (and will assert if not).
         :param model_name: The model name.
         """
-        residuals = self.test_data - predictions
+        assert self.predictions is not None
+        assert self.test_data is not None
+        residuals = self.test_data - self.predictions
         # plot residuals
         plt.figure(figsize=(10, 4))
         plt.plot(residuals)
@@ -217,12 +219,21 @@ class AlgoRunner:
         data = self.time_series if self.original_time_series is None else self.original_time_series
         data = data[(data.index <= self.test_end)]
         plt.plot(data)
-        plt.plot(predictions)
+        plt.plot(self.predictions)
         plt.legend(('Data', 'Predictions'), fontsize=16)
         plt.title('Data vs. Predictions', fontsize=20)
         plt.ylabel('Values', fontsize=16)
         plt.show()
-        utils.print_result_metrics(self.test_data, predictions)
+        self.print_result_metrics(model_name)
+
+    def print_result_metrics(self, model_name=None):
+        """
+        Print the result metrics according to the model's predictions. This method assumes
+        that the self.predictions field was set properly.
+        """
+        if model_name is not None:
+            print(f'Metrics for {model_name} model:')
+        utils.print_result_metrics(self.test_data, self.predictions)
 
     def rolling_forecast(self, model_orders, seasonal_orders=(0, 0, 0, 0)):
         """

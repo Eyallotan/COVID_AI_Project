@@ -639,6 +639,99 @@ def run_rolling_average_smoothing_experiment():
     runner.run_arima_regressor(2, 1, 2, train_end, test_end, use_rolling_forecast=True)
 
 
+def compare_all_models():
+    """
+    Forecast a certain time period with all models and compare the results.
+    """
+    national_daily_cases = generate_daily_cases_national()
+    # Apply transformations
+    transformer = DataTransformation(national_daily_cases.copy())
+    time_series_log = transformer.log(increment_val=1)
+    time_series_transformed = transformer.difference(lags=1)
+    runner = AlgoRunner(time_series_transformed, original_time_series=national_daily_cases,
+                        transformations=['log', 'difference'],
+                        diff_params=(1, time_series_log), log_exp_delta=1)
+    # Define training and test sets. We will make a 10 day forecast
+    train_end = datetime(2020, 12, 20)
+    test_end = datetime(2020, 12, 30)
+    ma_pred = runner.run_ma_regressor(7, train_end, test_end, use_rolling_forecast=False,
+                                      print_results=False)
+    runner.print_result_metrics('MA')
+    ar_pred = runner.run_ar_regressor(7, train_end, test_end, use_rolling_forecast=False,
+                                      print_results=False)
+    runner.print_result_metrics('AR')
+    arma_pred = runner.run_arma_regressor(7, 7, train_end, test_end, use_rolling_forecast=False,
+                                          print_results=False)
+    runner.print_result_metrics('ARMA')
+    arima_pred = runner.run_arima_regressor(7, 2, 7, train_end, test_end,
+                                            use_rolling_forecast=False, print_results=False)
+    runner.print_result_metrics('ARIMA')
+    sarima_pred = runner.run_sarima_regressor((2, 0, 2), (1, 1, 1, 7), train_end, test_end,
+                                              use_rolling_forecast=False, print_results=False)
+    runner.print_result_metrics('SARIMA')
+
+    # Plot the original data vs. predictions of each model
+    plt.figure(figsize=(10, 4))
+    data = national_daily_cases
+    plot_start_date = datetime(2020, 12, 1)
+    data = data[(data.index <= test_end)]
+    data = data[(data.index >= plot_start_date)]
+    plt.plot(data)
+    plt.plot(ma_pred)
+    plt.plot(ar_pred)
+    plt.plot(arma_pred)
+    plt.plot(arima_pred)
+    plt.plot(sarima_pred)
+    plt.legend(('Data', 'MA(7)', 'AR(7)', 'ARMA(7,7)', 'ARIMA(7,2,7)', 'SARIMA(2,0,2)(1,1,1,7)'),
+               fancybox=True,
+               framealpha=1,
+               shadow=True, borderpad=1, fontsize=12)
+    plt.title('Data vs. Predictions', fontsize=20)
+    plt.ylabel('Values', fontsize=16)
+    plt.show()
+
+
+def compare_models_rolling_average():
+    """
+    Forecast a certain time period with several models and compare the results. This experiment
+    uses the 7 day rolling average time series.
+    """
+    rolling_average_series = generate_rolling_average_series()
+    train_end = datetime(2020, 12, 1)
+    test_end = datetime(2021, 1, 1)
+    # Apply transformations
+    transformer = DataTransformation(rolling_average_series.copy())
+    time_series_transformed = transformer.log(increment_val=1)
+    runner = AlgoRunner(time_series_transformed, original_time_series=rolling_average_series,
+                        transformations=['log'], log_exp_delta=1)
+    ma_pred = runner.run_ma_regressor(4, train_end, test_end, use_rolling_forecast=True,
+                                      print_results=False)
+    runner.print_result_metrics('MA')
+    ar_pred = runner.run_ar_regressor(4, train_end, test_end, use_rolling_forecast=True,
+                                      print_results=False)
+    runner.print_result_metrics('AR')
+    arma_pred = runner.run_arma_regressor(4, 4, train_end, test_end, use_rolling_forecast=True,
+                                          print_results=False)
+    runner.print_result_metrics('ARMA')
+    # Plot the original data vs. predictions of each model
+    plt.figure(figsize=(10, 4))
+    data = rolling_average_series
+    plot_start_date = datetime(2020, 11, 1)
+    data = data[(data.index <= test_end)]
+    data = data[(data.index >= plot_start_date)]
+    plt.plot(data)
+    plt.plot(ma_pred)
+    plt.plot(ar_pred)
+    plt.plot(arma_pred)
+    plt.legend(('Data', 'MA(4)', 'AR(4)', 'ARMA(4,4)'),
+               fancybox=True,
+               framealpha=1,
+               shadow=True, borderpad=1, fontsize=12)
+    plt.title('Data vs. Predictions', fontsize=20)
+    plt.ylabel('Values', fontsize=16)
+    plt.show()
+
+
 if __name__ == "__main__":
     # You can run each part individually or all together
     time_series = generate_daily_cases_national()
@@ -648,10 +741,11 @@ if __name__ == "__main__":
     run_arma_model_demonstration()
     run_arima_model_demonstration()
     run_sarima_model_demonstration()
+    compare_all_models()
     run_auto_arima_experiment()
     run_rolling_forecast_experiment()
     run_rolling_average_smoothing_experiment()
-
+    compare_models_rolling_average()
 
 
 

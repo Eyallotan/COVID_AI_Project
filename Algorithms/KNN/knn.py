@@ -357,7 +357,7 @@ def run_knn_on_small_cities(population, k, train_df, test_df):
     :param test_df: test for knn
     :return: None
     """
-    population_df = pd.read_csv('../Resources/population_table.csv')
+    population_df = pd.read_csv('../../Resources/population_table.csv')
     population_df = population_df[['City_Code', 'population']].drop_duplicates()
 
     test_df = test_df.merge(population_df, on=["City_Code"])
@@ -381,7 +381,7 @@ def run_knn_on_big_cities(population, k, train_df, test_df):
     :param test_df: test for knn
     :return: None
     """
-    population_df = pd.read_csv('../Resources/population_table.csv')
+    population_df = pd.read_csv('../../Resources/population_table.csv')
     population_df = population_df[['City_Code', 'population']].drop_duplicates()
 
     test_df = test_df.merge(population_df, on=["City_Code"])
@@ -666,9 +666,9 @@ if __name__ == "__main__":
     Each block is stand alone and will run normally alone.   
     """
     # Load data
-    corona_df = pd.read_csv('../Preprocess/corona_df.csv')
-    train_df = pd.read_csv('../Preprocess/train_df.csv')
-    test_df = pd.read_csv('../Preprocess/test_df.csv')
+    corona_df = pd.read_csv('../../Preprocess/corona_df.csv')
+    train_df = pd.read_csv('../../Preprocess/train_df.csv')
+    test_df = pd.read_csv('../../Preprocess/test_df.csv')
 
     corona_df['Date'] = pd.to_datetime(corona_df['Date'])
     train_df['Date'] = pd.to_datetime(train_df['Date'])

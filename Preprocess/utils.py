@@ -15,16 +15,16 @@ class DataParams:
     def __init__(self):
         self.start_date = datetime(2021, 1, 5)
         self.end_date = datetime(2021, 9, 25)
-        self.split_date = datetime(2021, 1, 1)
+        self.split_date = datetime(2021, 9, 1)
         self.end_date_for_dt = datetime(2021, 11, 22)
         self.split_date_for_dt = datetime(2021, 11, 18)
         self.number_of_weeks_for_vaccination_stats = 2
         self.number_of_days_for_infected_stats = 14
         self.normalization_factor = 1
         self.not_normalized_columns = ['City_Name', 'City_Code', 'Date', 'colour', 'final_score',
-                                       'today_verified_cases', 'today_verified_cases_smoothed']
+                                       'today_verified_cases', 'rolling_average_7_days']
         self.Y = 'today_verified_cases'
-        # self.Y = 'today_verified_cases_smoothed'
+        # self.Y = 'rolling_average_7_days'
         self.split_test_size = 0.2
         self.split_random_state = 1
 
@@ -89,27 +89,32 @@ def preprocess_raw_dataset():
     generate_output_csv(corona_df, 'corona_city_table_preprocessed')
 
 
-def print_result_metrics(y_true, y_pred):
+def print_result_metrics(y_true, y_pred, one_liner=False):
     """
     Print model accuracy using various metrics.
     :param y_true: array-like of shape (n_samples,) or (n_samples, n_outputs)
         Ground truth (correct) target values.
     :param y_pred: array-like of shape (n_samples,) or (n_samples, n_outputs)
         Estimated target values.
+    :param one_liner: Whether to print a compact version of the result metrics.
     """
-    print('###----Metrics for model accuracy---###')
+    test_mean = np.mean(y_true.iloc[:, 0])
     mape = metrics.mean_absolute_percentage_error(y_true, y_pred)
     mae = metrics.mean_absolute_error(y_true, y_pred)
     mse = metrics.mean_squared_error(y_true, y_pred)
     med = metrics.median_absolute_error(y_true, y_pred)
     r2 = metrics.r2_score(y_true, y_pred)
-    print('Test Data Mean: ', np.mean(y_true.iloc[:, 0]))
-    print('Mean Absolute Error', mae)
-    print('Mean Squared Error:', mse)
-    print('Mean Absolute Percentage Error: ', mape)
-    print('Root Mean Squared Error:', np.sqrt(mse))
-    print('Median Absolute Error:', med)
-    print('R2 score:', r2)
+    if not one_liner:
+        print('###----Metrics for model accuracy---###')
+        print('Test Data Mean: ', test_mean)
+        print('Mean Absolute Error', mae)
+        print('Mean Squared Error:', mse)
+        print('Mean Absolute Percentage Error: ', mape)
+        print('Root Mean Squared Error:', np.sqrt(mse))
+        print('Median Absolute Error:', med)
+        print('R2 score:', r2)
+    else:
+        print(f'test mean: {test_mean}, mape:{mape}, mae {mae}, mse:{mse}, mape:{mape}, rmse:{np.sqrt(mse)}, med:{med}, R2 score:{r2}, ')
 
 
 if __name__ == "__main__":

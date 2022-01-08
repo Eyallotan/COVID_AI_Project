@@ -10,6 +10,11 @@ class DataTransformation:
     back to it's original form.
     """
     def __init__(self, data):
+        """
+        Init function for the DataTransformation class.
+        :param data: array_like. This is the data we want to perform our transformations on. We
+        assume that the data is in the format of [date, value].
+        """
         self.time_series = data
         self.scaler = StandardScaler()
 

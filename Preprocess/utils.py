@@ -20,9 +20,9 @@ class DataParams:
         self.number_of_days_for_infected_stats = 14
         self.normalization_factor = 1
         self.not_normalized_columns = ['City_Name', 'City_Code', 'Date', 'colour', 'final_score',
-                                       'today_verified_cases', 'today_verified_cases_smoothed']
+                                       'today_verified_cases', 'rolling_average_7_days']
         self.Y = 'today_verified_cases'
-        # self.Y = 'today_verified_cases_smoothed'
+        # self.Y = 'rolling_average_7_days'
         self.split_test_size = 0.2
         self.split_random_state = 1
 

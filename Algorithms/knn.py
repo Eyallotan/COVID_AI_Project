@@ -16,7 +16,7 @@ params = DataParams()
 cols = ['City_Name', 'City_Code', 'Date', 'Cumulative_verified_cases', 'Cumulated_recovered', 'Cumulated_deaths',
         'Cumulated_number_of_tests', 'Cumulated_number_of_diagnostic_tests', 'colour', 'final_score', 'vaccinated_dose_1_total',
         'vaccinated_dose_2_total', 'vaccinated_dose_3_total', 'dose_1_in_last_1_week', 'dose_1_in_last_2_week', 'dose_2_in_last_1_week',
-        'dose_2_in_last_2_week', 'dose_3_in_last_1_week', 'dose_3_in_last_2_week', 'today_verified_cases', 'today_verified_cases_smoothed',
+        'dose_2_in_last_2_week', 'dose_3_in_last_1_week', 'dose_3_in_last_2_week', 'today_verified_cases', 'rolling_average_7_days',
         'verified_cases_1_days_ago', 'verified_cases_2_days_ago', 'verified_cases_3_days_ago', 'verified_cases_4_days_ago',
         'verified_cases_5_days_ago', 'verified_cases_6_days_ago', 'verified_cases_7_days_ago', 'verified_cases_8_days_ago',
         'verified_cases_9_days_ago', 'verified_cases_10_days_ago', 'verified_cases_11_days_ago',
@@ -248,7 +248,7 @@ def experiment_features(examples, columns):
     """
     columns.remove('City_Name')
     columns.remove('Date')
-    columns.remove('today_verified_cases_smoothed')
+    columns.remove('rolling_average_7_days')
     columns.remove('today_verified_cases')
     for m in range(5, 15):
         print(f'm={m}')
@@ -546,11 +546,11 @@ def investigate_corona_df(corona_df, train_df, test_df):
     plt.show()
 
     plt.figure(figsize=(10, 4))
-    plt.plot(corona_df[corona_df['City_Code'] == 5000]['Date'].values, corona_df[corona_df['City_Code'] == 5000]['today_verified_cases_smoothed'].values, label="TLV")
-    plt.plot(corona_df[corona_df['City_Code'] == 4000]['Date'].values, corona_df[corona_df['City_Code'] == 4000]['today_verified_cases_smoothed'].values, label="HAIFA")
-    plt.plot(corona_df[corona_df['City_Code'] == 6100]['Date'].values, corona_df[corona_df['City_Code'] == 6100]['today_verified_cases_smoothed'].values, label="BNEI BRAK")
-    plt.plot(corona_df[corona_df['City_Code'] == 3730]['Date'].values, corona_df[corona_df['City_Code'] == 3730]['today_verified_cases_smoothed'].values, label="Givat Zeev")
-    plt.plot(corona_df[corona_df['City_Code'] == 53]['Date'].values, corona_df[corona_df['City_Code'] == 53]['today_verified_cases_smoothed'].values, label="Atlit")
+    plt.plot(corona_df[corona_df['City_Code'] == 5000]['Date'].values, corona_df[corona_df['City_Code'] == 5000]['rolling_average_7_days'].values, label="TLV")
+    plt.plot(corona_df[corona_df['City_Code'] == 4000]['Date'].values, corona_df[corona_df['City_Code'] == 4000]['rolling_average_7_days'].values, label="HAIFA")
+    plt.plot(corona_df[corona_df['City_Code'] == 6100]['Date'].values, corona_df[corona_df['City_Code'] == 6100]['rolling_average_7_days'].values, label="BNEI BRAK")
+    plt.plot(corona_df[corona_df['City_Code'] == 3730]['Date'].values, corona_df[corona_df['City_Code'] == 3730]['rolling_average_7_days'].values, label="Givat Zeev")
+    plt.plot(corona_df[corona_df['City_Code'] == 53]['Date'].values, corona_df[corona_df['City_Code'] == 53]['rolling_average_7_days'].values, label="Atlit")
     plt.xlabel('Date')
     plt.ylabel('daily new cases')
     plt.legend(loc='best', fancybox=True, shadow=True)
@@ -558,12 +558,11 @@ def investigate_corona_df(corona_df, train_df, test_df):
     plt.title('Daily new cases Rolling Avg (7 Days)')
     plt.show()
 
-    print('not smoothed')
     run_knn_best_columns(K, train_df, test_df)
 
-    train_df['today_verified_cases'] = train_df['today_verified_cases_smoothed']
-    test_df['today_verified_cases'] = test_df['today_verified_cases_smoothed']
-    print('smoothed')
+    train_df['today_verified_cases'] = train_df['rolling_average_7_days']
+    test_df['today_verified_cases'] = test_df['rolling_average_7_days']
+    print('rolling average 7 days:')
     run_knn_best_columns(K, train_df, test_df)
 
 
@@ -593,7 +592,7 @@ def run_knn_all_columns(k, train, test, weights='uniform'):
     """
     cols.remove('City_Name')
     cols.remove('Date')
-    cols.remove('today_verified_cases_smoothed')
+    cols.remove('rolling_average_7_days')
     # cols.remove('today_verified_cases')
     train_df = train[cols]
     test_df = test[cols]
@@ -628,7 +627,7 @@ def evaluate_all_columns(k, train_df):
     # Leave Y column on
     cols.remove('City_Name')
     cols.remove('Date')
-    cols.remove('today_verified_cases_smoothed')
+    cols.remove('rolling_average_7_days')
     # cols.remove('today_verified_cases')
     split_date = datetime(2021, 8, 23)
     train_examples = train_df[train_df['Date'] < split_date][cols]
@@ -690,8 +689,8 @@ if __name__ == "__main__":
     # experiment_features(train_df, list(train_df.columns))
     # exit(0)
     ################
-    # run_knn_best_columns(40, train_df, test_df, 'distance')
-    # exit(0)
+    run_knn_best_columns(40, train_df, test_df, 'distance')
+    exit(0)
     ################
     # experiment_k(train_df, test_df)
     # exit(0)

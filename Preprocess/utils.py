@@ -14,8 +14,10 @@ make sure we use the same params.
 class DataParams:
     def __init__(self):
         self.start_date = datetime(2021, 1, 5)
-        self.end_date = datetime(2021, 11, 22)
-        self.split_date = datetime(2021, 10, 15)
+        self.end_date = datetime(2021, 9, 25)
+        self.split_date = datetime(2021, 1, 1)
+        self.end_date_for_dt = datetime(2021, 11, 22)
+        self.split_date_for_dt = datetime(2021, 11, 18)
         self.number_of_weeks_for_vaccination_stats = 2
         self.number_of_days_for_infected_stats = 14
         self.normalization_factor = 1

@@ -4,11 +4,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.model_selection import KFold
-from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error, mean_absolute_error
+from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import TimeSeriesSplit
-import math
 
-from Preprocess.utils import DataParams, print_result_metrics
+from Preprocess.utils import DataParams
 
 K = 40
 
@@ -20,7 +19,7 @@ cols = ['City_Name', 'City_Code', 'Date', 'Cumulative_verified_cases', 'Cumulate
         'verified_cases_1_days_ago', 'verified_cases_2_days_ago', 'verified_cases_3_days_ago', 'verified_cases_4_days_ago',
         'verified_cases_5_days_ago', 'verified_cases_6_days_ago', 'verified_cases_7_days_ago', 'verified_cases_8_days_ago',
         'verified_cases_9_days_ago', 'verified_cases_10_days_ago', 'verified_cases_11_days_ago',
-        'verified_cases_12_days_ago', 'verified_cases_13_days_ago', 'verified_cases_14_days_ago'] # 'Date','today_verified_cases','City_Name',
+        'verified_cases_12_days_ago', 'verified_cases_13_days_ago', 'verified_cases_14_days_ago']
 
 best_columns = ['vaccinated_dose_3_total', 'dose_3_in_last_2_week', 'verified_cases_7_days_ago', 'City_Code',
                 'verified_cases_14_days_ago', 'colour'] + [params.Y]
@@ -101,11 +100,9 @@ def run_knn(k, train, test, weights='uniform'):
     x_test = test.loc[:, test.columns != params.Y]
     acc = neigh.score(x_test.values, y_test)
     y_predicted = neigh.predict(x_test.values)
-    mse = math.sqrt(mean_squared_error(y_test, y_predicted))
     mae = mean_absolute_error(y_test, y_predicted)
-    mape = mean_absolute_percentage_error(y_test, y_predicted)
 
-    return {'acc': acc, 'mae': mae, 'test_mean': y_test.mean(), 'y_test': y_test, 'y_predicted': y_predicted} # , 'mse': None
+    return {'acc': acc, 'mae': mae, 'test_mean': y_test.mean(), 'y_test': y_test, 'y_predicted': y_predicted}
 
 
 def plot_diff_graph(diff, x_label, y_label, title, y_mean):
@@ -273,7 +270,6 @@ def experiment_m_features(m, examples, columns):
         knn_output = run_knn(K, train_examples, test_examples)
         print(f'columns={test_columns}')
         print_results(knn_output)
-        # print_result_metrics(pd.DataFrame(knn_output['y_test']), pd.DataFrame(knn_output['y_predicted']), True)
 
 
 def experiment_k_kfold(examples):
@@ -283,7 +279,7 @@ def experiment_k_kfold(examples):
     :param examples: examples for train and test
     :return: None
     """
-    kf = KFold(n_splits=5)#, shuffle=True, random_state=307916502)
+    kf = KFold(n_splits=5)
     K = range(3, 25)
     accuracies = []
     for k in K:
@@ -495,22 +491,6 @@ def experiment_subset_data(k, train_df, test_df):
     run_knn_on_colour((1/3), k, train_df, test_df)
     run_knn_on_colour((2/3), k, train_df, test_df)
     run_knn_on_colour(1, k, train_df, test_df)
-
-    # start_date = datetime(2021, 1, 20)
-    # end_date = datetime(2021, 3, 20)
-    # run_knn_on_dates(k, train_df, full_test_df, start_date, end_date, best_columns)
-    #
-    # start_date = datetime(2021, 3, 20)
-    # end_date = datetime(2021, 5, 20)
-    # run_knn_on_dates(k, train_df, full_test_df, start_date, end_date, best_columns)
-    #
-    # start_date = datetime(2021, 5, 20)
-    # end_date = datetime(2021, 7, 20)
-    # run_knn_on_dates(k, train_df, full_test_df, start_date, end_date, best_columns)
-    #
-    # start_date = datetime(2021, 7, 20)
-    # end_date = datetime(2021, 9, 11)
-    # run_knn_on_dates(k, train_df, full_test_df, start_date, end_date, best_columns)
 
 
 def investigate_corona_df(corona_df, train_df, test_df):

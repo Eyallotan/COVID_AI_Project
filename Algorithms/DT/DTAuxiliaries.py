@@ -18,8 +18,8 @@ def get_corona_df_with_avg_cumulated_verified_cases():
 def get_train_and_test_df(df, params):
     train_df = df[df['Date'] < params.split_date_for_dt]
     test_df = df[df['Date'] >= params.split_date_for_dt]
-    train_df = train_df.drop(['today_verified_cases_smoothed', 'City_Name', 'Date'], axis=1)
-    test_df = test_df.drop(['today_verified_cases_smoothed', 'City_Name', 'Date'], axis=1)
+    train_df = train_df.drop(['City_Name', 'Date'], axis=1)
+    test_df = test_df.drop(['City_Name', 'Date'], axis=1)
 
     return train_df, test_df
 
@@ -27,11 +27,11 @@ def get_train_and_test_df_part_A(df, params, city_code_flag):
     train_df = df[df['Date'] < params.split_date_for_dt]
     test_df = df[df['Date'] >= params.split_date_for_dt]
     if city_code_flag == "With City_Code":
-        train_df = train_df.drop(['today_verified_cases_smoothed', 'City_Name', 'Date'], axis=1)
-        test_df = test_df.drop(['today_verified_cases_smoothed', 'City_Name', 'Date'], axis=1)
+        train_df = train_df.drop(['City_Name', 'Date'], axis=1)
+        test_df = test_df.drop(['City_Name', 'Date'], axis=1)
     if city_code_flag == "Without City_Code":
-        train_df = train_df.drop(['today_verified_cases_smoothed', 'City_Name', 'Date', 'City_Code'], axis=1)
-        test_df = test_df.drop(['today_verified_cases_smoothed', 'City_Name', 'Date', 'City_Code'], axis=1)
+        train_df = train_df.drop(['City_Name', 'Date', 'City_Code'], axis=1)
+        test_df = test_df.drop(['City_Name', 'Date', 'City_Code'], axis=1)
 
     return train_df, test_df
 

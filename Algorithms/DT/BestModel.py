@@ -11,11 +11,11 @@ from Preprocess import utils
 
 
 def run_BestModel():
-    RF_best_min_samples_leaf = 10
+    RF_best_min_samples_leaf = 8
 
-    RF_best_features = ['City_Code', 'Cumulative_verified_cases', 'colour', 'final_score',
-                            'vaccinated_dose_1_total', 'verified_cases_2_days_ago_avg',
-                            'verified_cases_8_days_ago_avg']
+    RF_best_features = ['City_Code', 'Cumulative_verified_cases', 'Cumulated_deaths', 'colour',
+                        'final_score', 'vaccinated_dose_1_total', 'verified_cases_2_days_ago_avg',
+                        'verified_cases_8_days_ago_avg']
 
     params = utils.DataParams()
     corona_df = DTAuxiliaries.get_corona_df_with_avg_cumulated_verified_cases()

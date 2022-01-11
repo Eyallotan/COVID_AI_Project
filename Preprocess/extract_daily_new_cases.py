@@ -38,22 +38,3 @@ def generate_daily_new_cases_df():
     result_df = cities_df[(cities_df['Date'] >= start_date) & (cities_df['Date'] <= end_date)][result_columns]
     return result_df
 
-
-'''
-    # ~~~~~~ Finished ~~~~~~
-
- # tmp code to test new columns
-    start_date = datetime(2020, 7, 20)
-    end_date = datetime(2020, 11, 20)
-
-    # we work in specified date range
-    result_df = cities_df[(cities_df['Date'] > start_date) & (cities_df['Date'] < end_date)]
-
-    tlv_df = result_df[result_df['City_Code'] == 5000][result_columns]
-
-    march_20 = datetime(2020, 3, 28)
-    haifa_df = cities_df[(cities_df['Date'] < march_20) & (cities_df['City_Code'] == 4000)]
-
-    print('~~~~')
-'''
-

@@ -36,7 +36,7 @@ def get_best_RFE_results_for_DTR_or_RFR(regressor_type, leaf_samples_range, avg_
         corona_df = DTAuxiliaries.get_corona_df_with_avg_cumulated_verified_cases()
 
     train_df = corona_df[corona_df['Date'] < params.split_date_for_dt]
-    train_df = train_df.drop(['today_verified_cases_smoothed', 'City_Name', 'Date'], axis=1)
+    train_df = train_df.drop(['City_Name', 'Date'], axis=1)
     train_df_no_pred_col = train_df.drop(['today_verified_cases'], axis=1)
 
     for leaf_samples in range(1, leaf_samples_range+1):

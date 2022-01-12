@@ -63,15 +63,19 @@ class AlgoRunner:
         predictions = model_fit.forecast(len(self.test_data))
         return predictions
 
-    def plot_correlation_plots(self, number_of_lags=20):
+    def print_correlation_plots(self, number_of_lags=20, print_acf=True, print_pacf=True):
         """
         This function plots the ACF and PACF plots for a given time series.
         :param number_of_lags: The number of lags to be printed for the correlation functions.
+        :param print_acf: Whether or not to print the ACF plot.
+        :param print_pacf: Whether or not to print the PACF plot.
         """
-        plot_acf(self.time_series, lags=number_of_lags)
-        plt.show()
-        plot_pacf(self.time_series, lags=number_of_lags)
-        plt.show()
+        if print_acf:
+            plot_acf(self.time_series, lags=number_of_lags)
+            plt.show()
+        if print_pacf:
+            plot_pacf(self.time_series, lags=number_of_lags)
+            plt.show()
 
     def generate_train_and_test_set(self):
         """

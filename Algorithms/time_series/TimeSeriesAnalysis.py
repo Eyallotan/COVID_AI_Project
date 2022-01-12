@@ -331,7 +331,7 @@ def run_ma_model_demonstration():
     """
     Demonstrate how the MA model works.
     """
-    print("Running MA model demonstration")
+    print("--------Running MA model demonstration--------")
     national_daily_cases = generate_daily_cases_national()
 
     # Define the training set
@@ -355,28 +355,27 @@ def run_ma_model_demonstration():
                      end_date=train_end)
     s_test.ADF_Stationarity_Test(time_series_transformed.copy(), printResults=True)
     print("Is the time series stationary? {0}".format(s_test.is_stationary))
-    print(f'Train series mean: {time_series_transformed.mean()}')
 
     # Define the runner that will run our MA model.
     runner = AlgoRunner(time_series_transformed, original_time_series=national_daily_cases,
                         transformations=['log', 'difference'],
                         diff_params=(1, time_series_log), log_exp_delta=1)
     # Print autocorrelation plot (ACF)
-    runner.plot_correlation_plots(number_of_lags=25)
+    runner.print_correlation_plots(number_of_lags=25, print_acf=True, print_pacf=False)
     # Run MA(2) and predict 2 days
     test_end = datetime(2020, 12, 22)
     runner.run_ma_regressor(ma_order=2, train_end=train_end, test_end=test_end)
     # Run MA(7) and predict 7 days
     test_end = datetime(2020, 12, 27)
     runner.run_ma_regressor(ma_order=7, train_end=train_end, test_end=test_end)
-    print("Finished MA model demonstration")
+    print("--------Finished MA model demonstration--------")
 
 
 def run_ar_model_demonstration():
     """
     Demonstrate how the AR model works.
     """
-    print("Running AR model demonstration")
+    print("--------Running AR model demonstration--------")
     national_daily_cases = generate_daily_cases_national()
 
     # Define training and test sets
@@ -399,7 +398,7 @@ def run_ar_model_demonstration():
                         transformations=['log', 'difference'],
                         diff_params=(1, time_series_log), log_exp_delta=1)
     # Print partial autocorrelation plot (PACF)
-    runner.plot_correlation_plots(number_of_lags=25)
+    runner.print_correlation_plots(number_of_lags=25, print_acf=False, print_pacf=True)
     # Run AR(2) and predict 7 days
     runner.run_ar_regressor(ar_order=2, train_end=train_end, test_end=test_end)
     # Run AR(7) and predict 7 days
@@ -411,7 +410,7 @@ def run_arma_model_demonstration():
     """
     Demonstrate how the ARMA model works.
     """
-    print("Running ARMA model demonstration")
+    print("--------Running ARMA model demonstration--------")
     national_daily_cases = generate_daily_cases_national()
 
     # Define training and test sets
@@ -436,14 +435,14 @@ def run_arma_model_demonstration():
                         diff_params=(1, time_series_log), log_exp_delta=1)
     # Run ARMA(7,7) and predict 10 days
     runner.run_arma_regressor(ar_order=7, ma_order=7, train_end=train_end, test_end=test_end)
-    print("Finished ARMA model demonstration")
+    print("--------Finished ARMA model demonstration--------")
 
 
 def run_arima_model_demonstration():
     """
     Demonstrate how the ARIMA model works.
     """
-    print("Running ARIMA model demonstration")
+    print("--------Running ARIMA model demonstration--------")
     national_daily_cases = generate_daily_cases_national()
 
     # Define training and test sets
@@ -477,14 +476,14 @@ def run_arima_model_demonstration():
     runner = AlgoRunner(national_daily_cases)
     runner.run_arima_regressor(ar_order=7, diff_order=2, ma_order=7, train_end=train_end,
                                test_end=test_end)
-    print("Finished ARIMA model demonstration")
+    print("--------Finished ARIMA model demonstration--------")
 
 
 def run_sarima_model_demonstration():
     """
     Demonstrate how the SARIMA model works.
     """
-    print("Running SARIMA model demonstration")
+    print("--------Running SARIMA model demonstration--------")
     national_daily_cases = generate_daily_cases_national()
 
     # Define training and test sets
@@ -523,20 +522,21 @@ def run_sarima_model_demonstration():
                         transformations=['log', 'difference'],
                         diff_params=(1, time_series_log), log_exp_delta=1)
     # Plot the correlation plots the remind us what are the appropriate lags for MA and AR.
-    runner.plot_correlation_plots(number_of_lags=25)
+    runner.print_correlation_plots(number_of_lags=25)
     # We choose p=2 and q=2 for the non-seasonal orders.
     model_orders = (2, 0, 2)
     # For the seasonal orders we choose P=1,D=1,Q=1 and M=7.
     seasonal_orders = (1, 1, 1, 7)
     runner.run_sarima_regressor(model_orders, seasonal_orders, train_end, test_end,
                                 use_rolling_forecast=False)
-    print("Finished SARIMA model demonstration")
+    print("--------Finished SARIMA model demonstration--------")
 
 
 def run_auto_arima_experiment():
     """
     Run the auto arima experiment in order to tune the models parameters.
     """
+    print("--------Running auto ARIMA experiment--------")
     national_daily_cases = generate_daily_cases_national()
     plot_time_series(national_daily_cases, 'National daily new cases', 'Daily new cases')
     # Run the naive auto arima on the original time series
@@ -595,6 +595,7 @@ def run_auto_arima_experiment():
     plt.title('Data vs. Predictions', fontsize=20)
     plt.ylabel('Values', fontsize=16)
     plt.show()
+    print("--------Finished auto ARIMA experiment--------")
 
 
 def run_rolling_forecast_experiment():
@@ -602,6 +603,7 @@ def run_rolling_forecast_experiment():
     Run the rolling forecast experiment.
     :return:
     """
+    print("--------Running rolling forecast experiment--------")
     national_daily_cases = generate_daily_cases_national()
     plot_time_series(national_daily_cases, 'National daily new cases', 'Daily new cases')
 
@@ -613,6 +615,7 @@ def run_rolling_forecast_experiment():
     runner1.run_arima_regressor(7, 2, 7, train_end, test_end, use_rolling_forecast=False)
     # Now try to predict the same month with the a rolling forecast
     runner1.run_arima_regressor(7, 2, 7, train_end, test_end, use_rolling_forecast=True)
+    print("--------Finished rolling forecast experiment--------")
 
 
 def run_rolling_average_smoothing_experiment():
@@ -620,6 +623,7 @@ def run_rolling_average_smoothing_experiment():
     Run the rolling average smoothing experiment. In this experiment we create the 7 day rolling
     average time series, and use it to predict the 3rd and 4th waves of COVID outbreaks.
     """
+    print("--------Running rolling average smoothing experiment--------")
     national_daily_cases = generate_daily_cases_national()
     # Show the volatility using seasonal decompose
     decompose_result_mult = seasonal_decompose(national_daily_cases, model="additive")
@@ -649,6 +653,9 @@ def run_rolling_average_smoothing_experiment():
     s_test.ADF_Stationarity_Test(rolling_average_series, printResults=True)
     print("Is the time series stationary? {0}".format(s_test.is_stationary))
 
+    # Compare between the basic ARMA models using rolling forecast
+    run_model_comparison_using_rolling_average()
+
     # Forecast the 3rd wave using basic ARIMA model and rolling forecast
     train_end = datetime(2020, 12, 1)
     test_end = datetime(2021, 4, 1)
@@ -659,6 +666,7 @@ def run_rolling_average_smoothing_experiment():
     train_end = datetime(2021, 7, 1)
     test_end = datetime(2021, 10, 1)
     runner.run_arima_regressor(2, 1, 2, train_end, test_end, use_rolling_forecast=True)
+    print("--------Finished rolling average smoothing experiment--------")
 
 
 def compare_all_models():
@@ -765,7 +773,6 @@ if __name__ == "__main__":
     compare_all_models()
     run_auto_arima_experiment()
     run_rolling_forecast_experiment()
-    run_model_comparison_using_rolling_average()
     run_rolling_average_smoothing_experiment()
 
 

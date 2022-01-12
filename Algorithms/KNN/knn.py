@@ -664,7 +664,10 @@ if __name__ == "__main__":
     # exit(0)
     ################
     # evaluate_all_columns(K, train_df) # run only on train
+    # exit(0)
+    ################
     # run_knn_all_columns(10, train_df, test_df)
+    # exit(0)
     ################
     # experiment_features(train_df, list(train_df.columns))
     # exit(0)

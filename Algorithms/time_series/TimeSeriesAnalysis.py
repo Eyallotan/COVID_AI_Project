@@ -24,7 +24,8 @@ def generate_daily_new_cases_csv(city_code):
     Generate a csv containing daily new cases by date.
     :param city_code: City code of the desired city.
     :return: No return. The function will generate a csv file called
-    'daily_new_cases_time_series' that will contain two columns - date and number of daily cases.
+    'daily_new_cases_time_series_{city_code}' that will contain two columns - date and number of
+    daily cases.
     """
     # read csv file
     cities_df = pd.read_csv('../../Resources/corona_city_table_ver_00155.csv')
@@ -110,14 +111,31 @@ class StationarityTests:
             print(df_results)
 
 
-def test_transformations(time_series):
+def test_transformations():
+    """
+    This method tests the DataTransformation library. We do this by running each transformation,
+    and then applying the inverse transformation to make sure we get back the original time
+    series. We use a time series that shows the daily new cases in Tel Aviv.
+    """
     print('Data transformation test start')
-    plot_time_series(time_series, 'Original time series', 'Values')
+    # Generate daily new cases for Tel Aviv (city code 5000)
+    time_series = generate_time_series_for_city(5000)
+    start_date = datetime(2020, 3, 12)
+    end_date = datetime(2021, 9, 5)
+    time_series = time_series[(time_series.index >= start_date)
+                              & (time_series.index <= end_date)]
+    plot_time_series(time_series, 'COVID Daily new cases Tel Aviv', 'Daily new cases')
     transformer = DataTransformation(time_series.copy())
     s_test = StationarityTests()
+    # Test for stationarity
+    s_test.ADF_Stationarity_Test(time_series, printResults=True)
+    print("Is the time series stationary? {0}".format(s_test.is_stationary))
+
+    # We see that the time series is NOT stationary, so let's start applying transformations
 
     # Difference transformation
     time_series_diff = transformer.difference(lags=1)
+    print('Differenced time series:\n', time_series_diff.head())
     plot_time_series(time_series_diff, 'Diff(1) Transformation', 'Diff values')
     s_test.ADF_Stationarity_Test(time_series_diff, printResults=True)
     print("Is the time series stationary? {0}".format(s_test.is_stationary))
@@ -140,6 +158,7 @@ def test_transformations(time_series):
     # Invert transformations
     transformer.invert_difference(sqrt_diff_time_series, sqrt_time_series, lags=1)
     inverted = transformer.pow()
+    print('Inverted time series:\n', inverted.head())
     # Print inverted time series
     plot_time_series(inverted, 'Inverted', 'Values')
 
@@ -151,6 +170,7 @@ def test_transformations(time_series):
     print("Is the time series stationary? {0}".format(s_test.is_stationary))
     # Invert
     inverted = transformer.sqrt()
+    print('Inverted time series:\n', inverted.head())
     # Print inverted time series
     plot_time_series(inverted, 'Inverted', 'Values')
 
@@ -169,13 +189,14 @@ def test_transformations(time_series):
     # Invert transformations
     transformer.invert_difference(log_diff_time_series, log_transformation, lags=1)
     inverted = transformer.exp(1)
+    print('Inverted time series:\n', inverted.head())
     # Print inverted time series
     plot_time_series(inverted, 'Inverted', 'Values')
 
     # Standardization transformation
     standardized_time_series = transformer.standardization()
     print('Standardized time series:\n', standardized_time_series.head())
-    plot_time_series(standardized_time_series, 'Standardization transformation',
+    plot_time_series(standardized_time_series, 'Standardization Transformation',
                      'Standardized values')
 
     s_test.ADF_Stationarity_Test(standardized_time_series, printResults=True)
@@ -198,6 +219,7 @@ def test_transformations(time_series):
                                   standardized_log_time_series, lags=1)
     transformer.exp(decrement_val=1)
     inverted = transformer.invert_standardization()
+    print('Inverted time series:\n', inverted.head())
     plot_time_series(inverted, 'Inverted', 'Values')
 
     print('Data transformation test finished successfully!')
@@ -691,7 +713,7 @@ def compare_all_models():
     plt.show()
 
 
-def compare_models_rolling_average():
+def run_model_comparison_using_rolling_average():
     """
     Forecast a certain time period with several models and compare the results. This experiment
     uses the 7 day rolling average time series.
@@ -734,8 +756,7 @@ def compare_models_rolling_average():
 
 if __name__ == "__main__":
     # You can run each part individually or all together
-    time_series = generate_daily_cases_national()
-    test_transformations(time_series)
+    test_transformations()
     run_ma_model_demonstration()
     run_ar_model_demonstration()
     run_arma_model_demonstration()
@@ -744,8 +765,8 @@ if __name__ == "__main__":
     compare_all_models()
     run_auto_arima_experiment()
     run_rolling_forecast_experiment()
+    run_model_comparison_using_rolling_average()
     run_rolling_average_smoothing_experiment()
-    compare_models_rolling_average()
 
 
 

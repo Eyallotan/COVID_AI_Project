@@ -1,7 +1,20 @@
-Python version: 3.7
-Setting up:
-1. start a virtual env
-2. run in the PyCharm terminal "pip install -r txt.libs"
+## Installation
+
+### Requirements 
+* Python version: 3.7
+* Set up a virtual env
+
+### Installation Guide
+
+```bash
+$ git clone https://github.com/Eyallotan/COVID_AI_Project.git
+$ cd covid_ai_project
+$ run "pip install -r txt.libs" 
+$ cd Algorithms
+$ Run the relevant code
+```
+
+## Usage
 
 * Algorithms folder 
 This folder contains all of the different algorithms and classifiers we have implemented. 
@@ -29,5 +42,7 @@ preprocessing phase:
 1. Run utils.py. This will handle the first preprocess phase of the raw data.
 2. Run create_main_df.py. This will create all of our custom features and add them to the dataset, and eventually
 create the corona_df.csv. 
+
+## Licence
 
 All code has been written by Eyal Lotan, Dor Sura and Tomer Haber.

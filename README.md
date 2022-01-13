@@ -41,4 +41,4 @@ create the corona_df.csv.
 
 ## License
 
-All code has been written by Eyal Lotan, Dor Sura and Tomer Haber.
+All of the code in this project has been written by Eyal Lotan, Dor Sura and Tomer Haber. All external data sources are listed in the [project report](https://github.com/Eyallotan/COVID_AI_Project/blob/master/Project%20report.pdf).

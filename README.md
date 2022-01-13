@@ -39,6 +39,6 @@ In order to re-run the preprocessing phase:
 2. Run create_main_df.py. This will create all of our custom features and add them to the dataset, and eventually
 create the corona_df.csv. 
 
-## Licence
+## License
 
 All code has been written by Eyal Lotan, Dor Sura and Tomer Haber.
